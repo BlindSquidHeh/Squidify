@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isOnVisibleTaskbar, parseSnapshot, taskbarOnDisplay } from "./shellwatch";
+import { isFullscreenOn, isOnVisibleTaskbar, parseSnapshot, taskbarOnDisplay } from "./shellwatch";
 
 describe("parseSnapshot", () => {
   it("разбирает состояние и панели задач", () => {
@@ -50,5 +50,18 @@ describe("taskbarOnDisplay", () => {
   });
   it("нет панели, если она спрятана", () => {
     expect(taskbarOnDisplay(second, [bars[0], { x: 1920, y: 1078, width: 1920, height: 2 }])).toBeNull();
+  });
+});
+
+describe("полный экран на мониторе", () => {
+  it("читает третий блок строки", () => {
+    const s = parseSnapshot("1|0,1040,1920,1080|1920,0,3840,1080");
+    expect(s?.fullscreenAreas).toEqual([{ x: 1920, y: 0, width: 1920, height: 1080 }]);
+    expect(parseSnapshot("1|0,1040,1920,1080")?.fullscreenAreas).toEqual([]);
+  });
+  it("полный экран на втором мониторе не прячет виджет первого", () => {
+    const areas = [{ x: 1920, y: 0, width: 1920, height: 1080 }];
+    expect(isFullscreenOn({ x: 1920, y: 0, width: 1920, height: 1080 }, areas)).toBe(true);
+    expect(isFullscreenOn({ x: 0, y: 0, width: 1920, height: 1080 }, areas)).toBe(false);
   });
 });
