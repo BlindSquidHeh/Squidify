@@ -13,7 +13,12 @@
     <meta name="theme-color" content="#131313" />
     <script>
       // Страница виджета (…/w/) должна быть прозрачной с самого первого кадра.
-      if (/\/w\/?$/.test(location.pathname)) document.documentElement.classList.add("widget-page");
+      if (/\/w\/?$/.test(location.pathname)) {
+        document.documentElement.classList.add("widget-page");
+        // Тёмная схема делает фон iframe непрозрачным (серая подложка в приложении).
+        var m = document.querySelector('meta[name="color-scheme"]');
+        if (m) m.remove();
+      }
       else {
         // Шрифты нужны только сайту: страница виджета в OBS должна грузиться быстро.
         var f = document.createElement("link");
@@ -23,6 +28,7 @@
       }
     </script>
     <style>
+      html.widget-page { color-scheme: normal !important; }
       html.widget-page, html.widget-page body { background: transparent !important; margin: 0; }
       html:not(.widget-page) body { background: #131313; color: #ececec; margin: 0; }
     </style>
