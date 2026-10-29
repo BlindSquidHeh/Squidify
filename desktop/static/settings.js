@@ -73,6 +73,10 @@
     });
   });
 
+  $("fit-window").addEventListener("click", function () {
+    api.action("fit-window");
+  });
+
   $("apply-size").addEventListener("click", function () {
     var w = Number($("width").value);
     var h = Number($("height").value);

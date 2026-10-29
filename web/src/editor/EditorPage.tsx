@@ -339,7 +339,7 @@ export default function EditorPage() {
             </div>
           </div>
           <div className={`preview-stage ${stage === "checker" ? "checker" : `bg-${stage}`}`}>
-            <div style={{ zoom: zoom / 100 }}>
+            <div style={{ zoom: (zoom / 100) * (cfg.size.scale / 100) }}>
               <WidgetView config={cfg} playback={playback} receivedAt={receivedAt} lastItem={live.lastItem} preview />
             </div>
           </div>

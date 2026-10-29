@@ -136,6 +136,23 @@ export function EditorSections({ tab, config: c, onChange }: Props) {
             options={LAYOUTS.map((l) => ({ value: l, label: LAYOUT_LABELS[l] }))}
             onChange={(v) => onChange({ ...c, layout: v })}
           />
+          <Slider
+            label="Масштаб всего виджета"
+            value={c.size.scale}
+            min={25}
+            max={400}
+            unit="%"
+            onChange={(v) => set("size", "scale", v)}
+            hint="Увеличивает или уменьшает виджет целиком: текст, обложку, отступы. Размер окна в OBS и в приложении подстроится сам."
+          />
+          <Slider
+            label="Прозрачность всего виджета"
+            value={c.size.opacity}
+            min={10}
+            max={100}
+            unit="%"
+            onChange={(v) => set("size", "opacity", v)}
+          />
           <Slider label="Ширина" value={c.size.width} min={120} max={1200} onChange={(v) => set("size", "width", v)} />
           <Toggle
             label="Высота по содержимому"
@@ -293,6 +310,14 @@ export function EditorSections({ tab, config: c, onChange }: Props) {
           <Slider label="Альбом" value={c.text.albumSize} min={8} max={48} onChange={(v) => set("text", "albumSize", v)} />
           <Slider label="Время" value={c.text.timeSize} min={8} max={32} onChange={(v) => set("text", "timeSize", v)} />
           <Slider
+            label="Межстрочный интервал названия"
+            value={c.text.lineHeight}
+            min={90}
+            max={200}
+            unit="%"
+            onChange={(v) => set("text", "lineHeight", v)}
+          />
+          <Slider
             label="Межбуквенный"
             value={c.text.letterSpacing}
             min={-5}
@@ -440,6 +465,10 @@ export function EditorSections({ tab, config: c, onChange }: Props) {
             onChange={(v) => set("cover", "radius", v)}
             hint="Spotify рекомендует 4px для небольших обложек и 8px для крупных"
           />
+          <Slider label="Рамка обложки" value={c.cover.borderWidth} min={0} max={8} onChange={(v) => set("cover", "borderWidth", v)} />
+          {c.cover.borderWidth > 0 && (
+            <ColorInput label="Цвет рамки обложки" value={c.cover.borderColor} onChange={(v) => set("cover", "borderColor", v)} />
+          )}
           <Toggle label="Тень обложки" checked={c.cover.shadow} onChange={(v) => set("cover", "shadow", v)} />
           <Segmented
             label="Сторона"
@@ -742,6 +771,14 @@ export function EditorSections({ tab, config: c, onChange }: Props) {
               { value: "black", label: "Чёрный" },
             ]}
             onChange={(v) => set("attribution", "variant", v)}
+          />
+          <Slider
+            label="Прозрачность значка"
+            value={c.attribution.opacity}
+            min={10}
+            max={100}
+            unit="%"
+            onChange={(v) => set("attribution", "opacity", v)}
           />
           <Slider label="Размер значка" value={c.attribution.size} min={21} max={48} onChange={(v) => set("attribution", "size", v)} />
           <Toggle

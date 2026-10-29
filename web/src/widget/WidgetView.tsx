@@ -117,6 +117,9 @@ function cssVars(c: WidgetConfig): CSSProperties {
     "--sw-shadow": shadow,
     "--sw-cover-size": `${c.cover.size}px`,
     "--sw-cover-radius": `${c.cover.radius}px`,
+    "--sw-cover-border": c.cover.borderWidth > 0 ? `${c.cover.borderWidth}px solid ${c.cover.borderColor}` : "none",
+    "--sw-widget-opacity": c.size.opacity / 100,
+    "--sw-title-line": c.text.lineHeight / 100,
     "--sw-cover-shadow": c.cover.shadow ? "0 4px 14px rgba(0,0,0,0.35)" : "none",
     "--sw-progress-height": `${c.progress.height}px`,
     "--sw-progress-radius": `${c.progress.radius}px`,
@@ -249,7 +252,7 @@ export function WidgetView({ config: c, playback, receivedAt, lastItem, preview 
   const iconColor = attributionColor(c);
   const position = attributionPosition(c, showCover);
   const corner = position !== "inline";
-  const attribution = <SpotifyIcon size={c.attribution.size} color={iconColor} />;
+  const attribution = <SpotifyIcon size={c.attribution.size} color={iconColor} opacity={c.attribution.opacity / 100} />;
 
   let body: ReactNode;
   if (message && !item) {

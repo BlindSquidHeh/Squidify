@@ -25,3 +25,7 @@ html.widget-page #root {
 .wp-faint {
   opacity: 0.6;
 }
+
+.wp-outer {
+  overflow: hidden;
+}

@@ -6,7 +6,15 @@ const PATH =
 
 export const SPOTIFY_GREEN = "#1ed760";
 
-export function SpotifyIcon({ size = 21, color = SPOTIFY_GREEN }: { size?: number; color?: string }) {
+export function SpotifyIcon({
+  size = 21,
+  color = SPOTIFY_GREEN,
+  opacity = 1,
+}: {
+  size?: number;
+  color?: string;
+  opacity?: number;
+}) {
   return (
     <svg
       width={Math.max(21, size)}
@@ -14,7 +22,7 @@ export function SpotifyIcon({ size = 21, color = SPOTIFY_GREEN }: { size?: numbe
       viewBox="0 0 24 24"
       role="img"
       aria-label="Spotify"
-      style={{ display: "block", flex: "none" }}
+      style={{ display: "block", flex: "none", opacity }}
     >
       <path fill={color} d={PATH} />
     </svg>

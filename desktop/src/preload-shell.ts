@@ -23,6 +23,21 @@ contextBridge.exposeInMainWorld("squidifyShell", {
   autoSize(width: number, height: number) {
     ipcRenderer.send("shell:auto-size", { width: Number(width), height: Number(height) });
   },
+  moveStart() {
+    ipcRenderer.send("shell:move-start");
+  },
+  move(dx: number, dy: number) {
+    ipcRenderer.send("shell:move", { dx: Number(dx), dy: Number(dy) });
+  },
+  moveEnd() {
+    ipcRenderer.send("shell:move-end");
+  },
+  fit(width: number, height: number) {
+    ipcRenderer.send("shell:fit-size", { width: Number(width), height: Number(height) });
+  },
+  onFit(callback: () => void) {
+    ipcRenderer.on("shell:fit", () => callback());
+  },
   ready() {
     ipcRenderer.send("shell:ready");
   },

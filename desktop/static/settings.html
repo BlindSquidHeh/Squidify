@@ -45,13 +45,17 @@
           ><input type="checkbox" id="clickThrough" /> <span>Пропускать клики сквозь виджет (когда зафиксирован)</span></label
         >
         <label class="toggle"
-          ><input type="checkbox" id="autoSize" /> <span>Подгонять размер окна под виджет автоматически</span></label
+          ><input type="checkbox" id="autoSize" /> <span>Всегда подгонять окно под виджет (отключается, если менять размер вручную)</span></label
         >
         <label class="toggle"><input type="checkbox" id="openAtLogin" /> <span>Запускать вместе с Windows</span></label>
         <div class="row size">
           <label>Ширина <input id="width" type="number" min="80" max="3840" /></label>
           <label>Высота <input id="height" type="number" min="40" max="2160" /></label>
           <button id="apply-size" type="button">Применить размер</button>
+        </div>
+        <p class="muted small">Виджет масштабируется вместе с окном и не обрезается. Размер можно менять и мышью: потяните за правый нижний уголок.</p>
+        <div class="row">
+          <button id="fit-window" type="button">Подогнать окно под виджет</button>
         </div>
         <div class="row">
           <button id="toggle-visible" type="button">Скрыть / показать виджет</button>
