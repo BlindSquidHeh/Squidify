@@ -1,0 +1,68 @@
+{
+  "name": "squidify-desktop",
+  "productName": "Squidify",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Виджет Spotify в прозрачном окне поверх других окон",
+  "author": "Squidify",
+  "license": "MIT",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "npm run build && electron .",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "dist": "npm run build && electron-builder --win --publish never"
+  },
+  "build": {
+    "appId": "io.github.squidify.desktop",
+    "productName": "Squidify",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "static/**/*",
+      "build/icon.png",
+      "build/tray.png",
+      "!dist/**/*.test.js"
+    ],
+    "protocols": [
+      {
+        "name": "Squidify",
+        "schemes": [
+          "squidify"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "shortcutName": "Squidify"
+    },
+    "portable": {
+      "artifactName": "Squidify-${version}-portable.exe"
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/node": "^22.20.5",
+    "electron": "^44.10.0",
+    "electron-builder": "^26.18.0",
+    "eslint": "^9.39.5",
+    "globals": "^17.13.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.0.5"
+  }
+}

@@ -1,0 +1,444 @@
+/* Стили виджета. Все значения приходят из CSS-переменных, которые
+   формирует WidgetView из проверенной конфигурации. */
+
+.sw-root {
+  width: var(--sw-width);
+  font-family: var(--sw-font);
+  letter-spacing: var(--sw-letter-spacing);
+  transition: opacity 400ms ease, transform 400ms ease;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.sw-root *,
+.sw-root *::before,
+.sw-root *::after {
+  box-sizing: border-box;
+}
+
+.sw-root.sw-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sw-root.sw-preview.sw-hidden {
+  opacity: 0.25;
+}
+
+.sw-card {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: var(--sw-align-items);
+  justify-content: var(--sw-justify);
+  gap: var(--sw-gap);
+  width: 100%;
+  height: var(--sw-height);
+  padding: var(--sw-padding);
+  background: var(--sw-bg);
+  -webkit-backdrop-filter: var(--sw-backdrop);
+  backdrop-filter: var(--sw-backdrop);
+  border: var(--sw-border);
+  border-radius: var(--sw-radius);
+  box-shadow: var(--sw-shadow);
+  overflow: hidden;
+}
+
+.sw-card.sw-has-corner.sw-corner-right .sw-info {
+  padding-right: calc(var(--sw-attribution-size) + 6px);
+}
+
+.sw-card.sw-has-corner.sw-corner-left .sw-info {
+  padding-left: calc(var(--sw-attribution-size) + 6px);
+}
+
+.sw-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+  text-align: var(--sw-text-align);
+  text-transform: var(--sw-text-transform);
+  text-shadow: var(--sw-text-shadow);
+}
+
+.sw-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  justify-content: var(--sw-justify);
+}
+
+.sw-row > .sw-marquee {
+  flex: 0 1 auto;
+}
+
+.sw-title {
+  color: var(--sw-title-color);
+  font-size: var(--sw-title-size);
+  font-weight: var(--sw-title-weight);
+  line-height: 1.25;
+}
+
+.sw-artist {
+  color: var(--sw-artist-color);
+  font-size: var(--sw-artist-size);
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.sw-album {
+  color: var(--sw-album-color);
+  font-size: var(--sw-album-size);
+  line-height: 1.3;
+}
+
+.sw-message .sw-artist {
+  white-space: normal;
+}
+
+.sw-root a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.sw-root a:hover {
+  text-decoration: underline;
+}
+
+/* Обложка: без обрезки, размытия, анимации и наложений (правила Spotify). */
+.sw-cover {
+  flex: none;
+  display: block;
+  width: var(--sw-cover-size);
+  height: var(--sw-cover-size);
+  border-radius: var(--sw-cover-radius);
+  box-shadow: var(--sw-cover-shadow);
+  overflow: hidden;
+  background: rgba(127, 127, 127, 0.2);
+}
+
+.sw-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.sw-cover-empty {
+  width: 100%;
+  height: 100%;
+}
+
+/* Прокрутка длинных названий */
+.sw-marquee {
+  overflow: hidden;
+  white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.sw-marquee.is-static .sw-marquee-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sw-marquee.is-static .sw-marquee-track,
+.sw-marquee.is-static .sw-marquee-track > a {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sw-marquee.is-scrolling {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 16px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 16px), transparent 100%);
+  text-align: left;
+}
+
+.sw-marquee.is-scrolling .sw-marquee-track {
+  display: inline-flex;
+  padding-left: 12px;
+  animation-name: sw-marquee;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes sw-marquee {
+  0%,
+  15% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(var(--sw-marquee-distance));
+  }
+}
+
+/* Прогресс */
+.sw-progress-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  width: 100%;
+}
+
+.sw-progress {
+  position: relative;
+  width: 100%;
+  height: var(--sw-progress-height);
+  border-radius: var(--sw-progress-radius);
+  background: var(--sw-progress-track);
+}
+
+.sw-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: var(--sw-progress-fill);
+  transition: width 250ms linear;
+}
+
+.sw-progress-line {
+  border-radius: 0;
+}
+
+.sw-progress-glow .sw-progress-fill {
+  box-shadow: 0 0 8px var(--sw-progress-glow), 0 0 16px var(--sw-progress-glow);
+}
+
+.sw-progress-segmented {
+  -webkit-mask-image: repeating-linear-gradient(90deg, #000 0 8px, transparent 8px 11px);
+  mask-image: repeating-linear-gradient(90deg, #000 0 8px, transparent 8px 11px);
+}
+
+.sw-progress-knob {
+  position: absolute;
+  top: 50%;
+  width: calc(var(--sw-progress-height) * 2.6);
+  height: calc(var(--sw-progress-height) * 2.6);
+  min-width: 8px;
+  min-height: 8px;
+  border-radius: 50%;
+  background: var(--sw-title-color);
+  transform: translate(-50%, -50%);
+  transition: left 250ms linear;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.sw-times {
+  display: flex;
+  justify-content: space-between;
+  color: var(--sw-time-color);
+  font-size: var(--sw-time-size);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.sw-compact-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.sw-compact-progress .sw-progress {
+  border-radius: 0;
+}
+
+/* Атрибуция Spotify */
+.sw-attribution {
+  position: absolute;
+  z-index: 2;
+  line-height: 0;
+}
+
+.sw-attribution-top-right {
+  top: max(6px, calc(var(--sw-padding) * 0.6));
+  right: max(6px, calc(var(--sw-padding) * 0.6));
+}
+
+.sw-attribution-top-left {
+  top: max(6px, calc(var(--sw-padding) * 0.6));
+  left: max(6px, calc(var(--sw-padding) * 0.6));
+}
+
+.sw-attribution-bottom-right {
+  bottom: max(6px, calc(var(--sw-padding) * 0.6));
+  right: max(6px, calc(var(--sw-padding) * 0.6));
+}
+
+.sw-attribution-bottom-left {
+  bottom: max(6px, calc(var(--sw-padding) * 0.6));
+  left: max(6px, calc(var(--sw-padding) * 0.6));
+}
+
+.sw-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: var(--sw-justify);
+  margin-top: 8px;
+  padding: 6px 14px 6px 8px;
+  border-radius: 999px;
+  background: var(--sw-link-bg);
+  color: var(--sw-link-color) !important;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-shadow: none;
+}
+
+.sw-root .sw-link:hover {
+  text-decoration: none;
+  filter: brightness(1.08);
+}
+
+.sw-paused {
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  transform: translateX(-50%);
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Варианты расположения */
+.sw-layout-vertical .sw-card,
+.sw-layout-large-cover .sw-card {
+  flex-direction: column;
+  align-items: var(--sw-justify);
+  justify-content: var(--sw-align-items);
+}
+
+.sw-layout-vertical .sw-info,
+.sw-layout-large-cover .sw-info {
+  width: 100%;
+  flex: none;
+}
+
+.sw-layout-vertical .sw-cover,
+.sw-layout-large-cover .sw-cover {
+  align-self: center;
+}
+
+.sw-layout-large-cover .sw-cover {
+  width: min(var(--sw-cover-size), 100%);
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.sw-layout-compact .sw-info {
+  gap: 0;
+}
+
+.sw-layout-progress .sw-card {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.sw-layout-progress .sw-progress-head {
+  justify-content: space-between;
+}
+
+.sw-layout-progress .sw-progress-head .sw-title {
+  font-size: var(--sw-title-size);
+}
+
+.sw-layout-progress .sw-progress-block {
+  margin-top: 4px;
+}
+
+/* Анимации смены трека: применяются к тексту, обложка не анимируется. */
+.sw-info[class*="sw-anim-"] {
+  animation-duration: var(--sw-anim-duration);
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+  animation-fill-mode: both;
+}
+
+.sw-anim-fade {
+  animation-name: sw-fade;
+}
+.sw-anim-slide-up {
+  animation-name: sw-slide-up;
+}
+.sw-anim-slide-left {
+  animation-name: sw-slide-left;
+}
+.sw-anim-scale {
+  animation-name: sw-scale;
+}
+.sw-anim-blur {
+  animation-name: sw-blur;
+}
+
+@keyframes sw-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sw-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sw-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sw-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sw-blur {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sw-info[class*="sw-anim-"] {
+    animation: none;
+  }
+}

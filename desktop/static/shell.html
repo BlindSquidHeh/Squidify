@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Локальная оболочка окна виджета. Удалённая страница виджета живёт
+         только во вложенном iframe и не имеет доступа к preload API. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-src https: http://127.0.0.1:* http://localhost:*; base-uri 'none'; form-action 'none'"
+    />
+    <title>Squidify</title>
+    <link rel="stylesheet" href="shell.css" />
+  </head>
+  <body class="unlocked">
+    <iframe
+      id="widget"
+      title="Виджет Spotify"
+      sandbox="allow-scripts allow-same-origin allow-popups"
+      referrerpolicy="no-referrer"
+      allow=""
+    ></iframe>
+    <div id="drag" title="Перетащите, чтобы переместить. Зафиксировать положение можно в меню трея."></div>
+    <div id="grip" title="Потяните, чтобы изменить размер"></div>
+    <div id="empty" hidden>Вставьте ссылку на виджет в настройках Squidify</div>
+    <script src="shell.js"></script>
+  </body>
+</html>

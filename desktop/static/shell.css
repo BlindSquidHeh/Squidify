@@ -1,0 +1,74 @@
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+}
+
+#widget {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color-scheme: normal;
+}
+
+/* В незафиксированном режиме весь виджет — область перетаскивания окна. */
+#drag {
+  position: absolute;
+  inset: 0;
+  -webkit-app-region: drag;
+  cursor: move;
+  border-radius: 6px;
+  transition: box-shadow 150ms;
+}
+
+body.unlocked:hover #drag {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45), inset 0 0 0 2px rgba(0, 0, 0, 0.35);
+}
+
+#grip {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  -webkit-app-region: no-drag;
+  opacity: 0;
+  transition: opacity 150ms;
+  background:
+    linear-gradient(135deg, transparent 50%, rgba(255, 255, 255, 0.85) 50%, rgba(255, 255, 255, 0.85) 60%, transparent 60%,
+      transparent 70%, rgba(255, 255, 255, 0.85) 70%, rgba(255, 255, 255, 0.85) 80%, transparent 80%);
+}
+
+body.unlocked:hover #grip {
+  opacity: 1;
+}
+
+body.locked #drag,
+body.locked #grip {
+  display: none;
+}
+
+#empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  text-align: center;
+  border-radius: 12px;
+  background: rgba(10, 10, 14, 0.85);
+  color: #fff;
+  font: 500 13px/1.4 "Segoe UI", system-ui, sans-serif;
+}
+
+#empty[hidden] {
+  display: none;
+}

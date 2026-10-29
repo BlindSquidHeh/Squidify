@@ -1,0 +1,23 @@
+{
+  "name": "squidify",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Бесплатный настраиваемый виджет Spotify для OBS и Windows",
+  "license": "MIT",
+  "workspaces": [
+    "web",
+    "desktop"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w web",
+    "build": "npm run build -w web && npm run build -w desktop",
+    "lint": "npm run lint -w web && npm run lint -w desktop",
+    "typecheck": "npm run typecheck -w web && npm run typecheck -w desktop",
+    "test": "npm run test -w web && npm run test -w desktop",
+    "test:db": "bash supabase/tests/run.sh",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
