@@ -16,6 +16,8 @@ export interface WidgetEntry {
   url: string | null;
   bounds: Bounds | null;
   visible: boolean;
+  /** desktop — обычное окно; taskbar — над панелью задач, видно только пока видна панель. */
+  placement: "desktop" | "taskbar";
 }
 
 export interface Settings {
@@ -39,7 +41,7 @@ export function defaultWidgetName(index: number): string {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  widgets: [{ id: "main", name: defaultWidgetName(0), url: null, bounds: null, visible: true }],
+  widgets: [{ id: "main", name: defaultWidgetName(0), url: null, bounds: null, visible: true, placement: "desktop" }],
   alwaysOnTop: true,
   locked: false,
   clickThrough: false,
@@ -97,6 +99,7 @@ function sanitizeWidgets(input: unknown, legacy: Record<string, unknown>): Widge
       url: location ? location.href : null,
       bounds: sanitizeBounds(w.bounds),
       visible: bool(w.visible, true),
+      placement: w.placement === "taskbar" ? "taskbar" : "desktop",
     });
   }
   return widgets.length > 0 ? widgets : DEFAULT_SETTINGS.widgets.map((w) => ({ ...w }));

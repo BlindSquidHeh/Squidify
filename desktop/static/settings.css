@@ -168,3 +168,12 @@ button.danger {
   min-height: 0;
   margin-top: 6px;
 }
+
+select {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #0f0f15;
+  color: var(--text);
+  font: inherit;
+}
