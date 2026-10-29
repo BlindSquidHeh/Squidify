@@ -50,6 +50,23 @@ export function isOnVisibleTaskbar(window: Rect, taskbars: Rect[]): boolean {
   );
 }
 
+/** Панель задач, лежащая на данном мониторе (по центру панели), если она не спрятана автоскрытием. */
+export function taskbarOnDisplay(display: Rect, taskbars: Rect[]): Rect | null {
+  return (
+    taskbars.find((t) => {
+      const cx = t.x + t.width / 2;
+      const cy = t.y + t.height / 2;
+      return (
+        Math.min(t.width, t.height) >= MIN_TASKBAR_THICKNESS &&
+        cx >= display.x &&
+        cx <= display.x + display.width &&
+        cy >= display.y &&
+        cy <= display.y + display.height
+      );
+    }) ?? null
+  );
+}
+
 /** Скрипт PowerShell: раз в 400 мс печатает по строке состояния. */
 export const WATCH_SCRIPT = String.raw`
 $ErrorActionPreference = 'SilentlyContinue'
