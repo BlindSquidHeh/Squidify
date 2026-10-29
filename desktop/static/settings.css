@@ -177,3 +177,14 @@ select {
   color: var(--text);
   font: inherit;
 }
+
+.flags {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 4px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.flags .toggle {
+  margin: 0;
+}

@@ -37,6 +37,7 @@ import {
   ensureVisible,
   isValidHotkey,
   MAX_WIDGETS,
+  newWidgetEntry,
   newWidgetId,
   type Bounds,
   type Settings,
@@ -227,7 +228,7 @@ function createWidgetWindow(entry: WidgetEntry) {
     minimizable: false,
     fullscreenable: false,
     skipTaskbar: true,
-    alwaysOnTop: settings.alwaysOnTop,
+    alwaysOnTop: entry.alwaysOnTop,
     show: false,
     title: "Squidify",
     icon: appIcon(),
@@ -290,15 +291,16 @@ function createWidgetWindow(entry: WidgetEntry) {
  */
 function applyWindowFlags(id?: string, topmost = true) {
   for (const [wid, win] of windows) {
-    if (win.isDestroyed() || (id && wid !== id)) continue;
+    const entry = entryOf(wid);
+    if (win.isDestroyed() || !entry || (id && wid !== id)) continue;
     if (topmost) {
       // Уровень screen-saver держит окно поверх полноэкранных окон в оконном режиме.
-      win.setAlwaysOnTop(settings.alwaysOnTop, "screen-saver");
-      win.setVisibleOnAllWorkspaces(settings.alwaysOnTop, { visibleOnFullScreen: true });
+      win.setAlwaysOnTop(entry.alwaysOnTop, "screen-saver");
+      win.setVisibleOnAllWorkspaces(entry.alwaysOnTop, { visibleOnFullScreen: true });
     }
-    win.setMovable(!settings.locked);
-    win.setIgnoreMouseEvents(settings.locked && settings.clickThrough, { forward: true });
-    if (settings.alwaysOnTop && win.isVisible()) win.moveTop();
+    win.setMovable(!entry.locked);
+    win.setIgnoreMouseEvents(entry.locked && entry.clickThrough, { forward: true });
+    if (entry.alwaysOnTop && win.isVisible()) win.moveTop();
     sendShellState(wid);
   }
 }
@@ -309,8 +311,8 @@ function sendShellState(id: string) {
   if (!win || !entry) return;
   win.webContents.send("shell:state", {
     url: entry.url,
-    locked: settings.locked,
-    autoSize: settings.autoSize,
+    locked: entry.locked,
+    autoSize: entry.autoSize,
   });
 }
 
@@ -446,14 +448,11 @@ function addWidget(location: WidgetLocation | null, name?: string): AddResult {
   if (settings.widgets.length >= MAX_WIDGETS) {
     return { ok: false, error: `Можно добавить не больше ${MAX_WIDGETS} виджетов.` };
   }
-  const entry: WidgetEntry = {
-    id: newWidgetId(),
-    name: name?.trim() ? name.trim().slice(0, 40) : defaultWidgetName(settings.widgets.length),
-    url: location ? location.href : null,
-    bounds: null,
-    visible: true,
-    placement: "desktop",
-  };
+  const entry = newWidgetEntry(
+    newWidgetId(),
+    name?.trim() ? name.trim().slice(0, 40) : defaultWidgetName(settings.widgets.length),
+    location ? location.href : null,
+  );
   settings = { ...settings, widgets: [...settings.widgets, entry] };
   saveSettings(settings);
   createWidgetWindow(entry);
@@ -482,6 +481,9 @@ function updateEntry(id: string, patch: Partial<WidgetEntry>, refresh = true) {
   saveSettings(settings);
   if (refresh) {
     if ("url" in patch) sendShellState(id);
+    if ("alwaysOnTop" in patch) applyWindowFlags(id, true);
+    else if ("locked" in patch || "clickThrough" in patch) applyWindowFlags(id, false);
+    else if ("autoSize" in patch) sendShellState(id);
     rebuildTrayMenu();
     notifySettings();
   }
@@ -491,10 +493,6 @@ function updateSettings(patch: Partial<Omit<Settings, "widgets">>, refresh = tru
   settings = { ...settings, ...patch };
   saveSettings(settings);
   if (refresh) {
-    if ("alwaysOnTop" in patch || "locked" in patch || "clickThrough" in patch) {
-      applyWindowFlags(undefined, "alwaysOnTop" in patch);
-    }
-    else if ("autoSize" in patch) for (const id of windows.keys()) sendShellState(id);
     if ("hotkey" in patch) registerHotkey();
     if ("openAtLogin" in patch) app.setLoginItemSettings({ openAtLogin: settings.openAtLogin });
     rebuildTrayMenu();
@@ -608,25 +606,6 @@ function rebuildTrayMenu() {
     },
     ...widgetItems,
     { type: "separator" },
-    {
-      label: "Поверх всех окон",
-      type: "checkbox",
-      checked: settings.alwaysOnTop,
-      click: (item) => updateSettings({ alwaysOnTop: item.checked }),
-    },
-    {
-      label: "Зафиксировать положение",
-      type: "checkbox",
-      checked: settings.locked,
-      click: (item) => updateSettings({ locked: item.checked }),
-    },
-    {
-      label: "Пропускать клики сквозь виджеты",
-      type: "checkbox",
-      checked: settings.clickThrough,
-      enabled: settings.locked,
-      click: (item) => updateSettings({ clickThrough: item.checked }),
-    },
     { type: "separator" },
     { label: "Обновить виджеты", click: () => reloadWidgets() },
     {
@@ -682,16 +661,17 @@ function registerIpc() {
   ipcMain.on("shell:resize", (event, size: unknown) => {
     const id = shellSenderId(event);
     const s = readSize(size);
-    if (!id || !s || settings.locked) return;
+    const entry = id ? entryOf(id) : undefined;
+    if (!id || !s || !entry || entry.locked) return;
     // Ручное изменение размера отключает автоподбор.
-    if (settings.autoSize) updateSettings({ autoSize: false });
+    if (entry.autoSize) updateEntry(id, { autoSize: false });
     resizeWidget(id, s.width, s.height);
   });
 
   ipcMain.on("shell:auto-size", (event, size: unknown) => {
     const id = shellSenderId(event);
     const s = readSize(size);
-    if (!id || !s || !settings.autoSize) return;
+    if (!id || !s || !entryOf(id)?.autoSize) return;
     resizeWidget(id, s.width, s.height);
   });
 
@@ -699,14 +679,14 @@ function registerIpc() {
   ipcMain.on("shell:move-start", (event) => {
     const id = shellSenderId(event);
     const win = id ? windowOf(id) : null;
-    if (!id || !win || settings.locked) return;
+    if (!id || !win || entryOf(id)?.locked) return;
     drags.set(id, win.getBounds());
   });
   ipcMain.on("shell:move", (event, delta: unknown) => {
     const id = shellSenderId(event);
     const win = id ? windowOf(id) : null;
     const start = id ? drags.get(id) : undefined;
-    if (!win || !start || settings.locked) return;
+    if (!id || !win || !start || entryOf(id)?.locked) return;
     const d = delta as { dx?: unknown; dy?: unknown };
     if (typeof d?.dx !== "number" || typeof d?.dy !== "number") return;
     // Размер задаём явно: при дробном масштабе Windows setPosition может его сдвигать.
@@ -726,7 +706,7 @@ function registerIpc() {
   ipcMain.on("shell:fit-size", (event, size: unknown) => {
     const id = shellSenderId(event);
     const s = readSize(size);
-    if (!id || !s || settings.locked) return;
+    if (!id || !s || entryOf(id)?.locked) return;
     resizeWidget(id, s.width, s.height);
   });
 
@@ -744,9 +724,7 @@ function registerIpc() {
     if (!isTrustedSettings(event)) throw new Error("forbidden");
     const p = (patch && typeof patch === "object" ? patch : {}) as Record<string, unknown>;
     const next: Partial<Omit<Settings, "widgets">> = {};
-    for (const key of ["alwaysOnTop", "locked", "clickThrough", "autoSize", "openAtLogin"] as const) {
-      if (typeof p[key] === "boolean") next[key] = p[key] as boolean;
-    }
+    if (typeof p.openAtLogin === "boolean") next.openAtLogin = p.openAtLogin;
     if ("hotkey" in p) {
       if (!isValidHotkey(p.hotkey)) return { ok: false, error: "Некорректное сочетание клавиш" };
       next.hotkey = p.hotkey;
@@ -783,6 +761,9 @@ function registerIpc() {
     }
     if (typeof p.name === "string" && p.name.trim()) next.name = p.name.trim().slice(0, 40);
     if (p.placement === "desktop" || p.placement === "taskbar") next.placement = p.placement;
+    for (const key of ["alwaysOnTop", "locked", "clickThrough", "autoSize"] as const) {
+      if (typeof p[key] === "boolean") next[key] = p[key] as boolean;
+    }
     updateEntry(id, next);
     if (next.placement) {
       // Переход с панели задач на рабочий стол возвращает окно, если оно было скрыто вместе с панелью.
@@ -852,9 +833,8 @@ app.whenReady().then(async () => {
   // moveTop не забирает фокус и для окна, которое уже наверху, ничего не меняет, поэтому его можно
   // вызывать часто: так виджет возвращается почти мгновенно, а не мигает раз в пару секунд.
   setInterval(() => {
-    if (!settings.alwaysOnTop) return;
-    for (const win of windows.values()) {
-      if (!win.isDestroyed() && win.isVisible()) win.moveTop();
+    for (const [id, win] of windows) {
+      if (!win.isDestroyed() && win.isVisible() && entryOf(id)?.alwaysOnTop) win.moveTop();
     }
   }, 150);
 

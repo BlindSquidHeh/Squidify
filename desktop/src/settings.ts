@@ -18,14 +18,15 @@ export interface WidgetEntry {
   visible: boolean;
   /** desktop — обычное окно; taskbar — над панелью задач, видно только пока видна панель. */
   placement: "desktop" | "taskbar";
-}
-
-export interface Settings {
-  widgets: WidgetEntry[];
+  /** Эти четыре настройки у каждого виджета свои. */
   alwaysOnTop: boolean;
   locked: boolean;
   clickThrough: boolean;
   autoSize: boolean;
+}
+
+export interface Settings {
+  widgets: WidgetEntry[];
   hotkey: string;
   openAtLogin: boolean;
 }
@@ -40,12 +41,14 @@ export function defaultWidgetName(index: number): string {
   return `Виджет ${index + 1}`;
 }
 
+export const WIDGET_FLAG_DEFAULTS = { alwaysOnTop: true, locked: false, clickThrough: false, autoSize: true };
+
+export function newWidgetEntry(id: string, name: string, url: string | null): WidgetEntry {
+  return { id, name, url, bounds: null, visible: true, placement: "desktop", ...WIDGET_FLAG_DEFAULTS };
+}
+
 export const DEFAULT_SETTINGS: Settings = {
-  widgets: [{ id: "main", name: defaultWidgetName(0), url: null, bounds: null, visible: true, placement: "desktop" }],
-  alwaysOnTop: true,
-  locked: false,
-  clickThrough: false,
-  autoSize: true,
+  widgets: [newWidgetEntry("main", defaultWidgetName(0), null)],
   hotkey: "CommandOrControl+Alt+S",
   openAtLogin: false,
 };
@@ -100,6 +103,11 @@ function sanitizeWidgets(input: unknown, legacy: Record<string, unknown>): Widge
       bounds: sanitizeBounds(w.bounds),
       visible: bool(w.visible, true),
       placement: w.placement === "taskbar" ? "taskbar" : "desktop",
+      // Старые настройки хранили эти флаги один раз для всех виджетов.
+      alwaysOnTop: bool(w.alwaysOnTop, bool(legacy.alwaysOnTop, WIDGET_FLAG_DEFAULTS.alwaysOnTop)),
+      locked: bool(w.locked, bool(legacy.locked, WIDGET_FLAG_DEFAULTS.locked)),
+      clickThrough: bool(w.clickThrough, bool(legacy.clickThrough, WIDGET_FLAG_DEFAULTS.clickThrough)),
+      autoSize: bool(w.autoSize, bool(legacy.autoSize, WIDGET_FLAG_DEFAULTS.autoSize)),
     });
   }
   return widgets.length > 0 ? widgets : DEFAULT_SETTINGS.widgets.map((w) => ({ ...w }));
@@ -110,10 +118,6 @@ export function sanitizeSettings(input: unknown): Settings {
   const d = DEFAULT_SETTINGS;
   return {
     widgets: sanitizeWidgets(src.widgets, src),
-    alwaysOnTop: bool(src.alwaysOnTop, d.alwaysOnTop),
-    locked: bool(src.locked, d.locked),
-    clickThrough: bool(src.clickThrough, d.clickThrough),
-    autoSize: bool(src.autoSize, d.autoSize),
     hotkey: isValidHotkey(src.hotkey) ? src.hotkey : d.hotkey,
     openAtLogin: bool(src.openAtLogin, d.openAtLogin),
   };
