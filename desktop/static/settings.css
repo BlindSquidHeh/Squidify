@@ -151,3 +151,20 @@ button.danger {
 .message.ok {
   color: #7be3a0;
 }
+
+.widget-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 10px;
+  background: #11111a;
+}
+
+.widget-card .name {
+  font-weight: 700;
+}
+
+.widget-card .message {
+  min-height: 0;
+  margin-top: 6px;
+}

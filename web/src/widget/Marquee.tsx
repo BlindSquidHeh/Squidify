@@ -31,7 +31,11 @@ export function Marquee({ text, enabled, speed, className, style, href }: Props)
     const measure = () => {
       if (!outer.current || !probe.current) return;
       const available = outer.current.clientWidth;
-      const full = Math.ceil(probe.current.getBoundingClientRect().width);
+      // Виджет может быть растянут через CSS transform (масштаб окна Windows):
+      // getBoundingClientRect возвращает уже масштабированные размеры, а clientWidth нет.
+      const box = outer.current.getBoundingClientRect().width;
+      const scale = outer.current.offsetWidth > 0 && box > 0 ? box / outer.current.offsetWidth : 1;
+      const full = Math.ceil(probe.current.getBoundingClientRect().width / scale);
       // available = 0 означает, что виджет ещё не раскладывается: ждём.
       if (available <= 0) return;
       setOverflow((prev) => {

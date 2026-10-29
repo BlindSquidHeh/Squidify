@@ -11,8 +11,26 @@ describe("sanitizeSettings", () => {
 
   it("отбрасывает недопустимую ссылку и ограничивает размер окна", () => {
     const s = sanitizeSettings({ widgetUrl: "https://evil.com/", bounds: { x: 10, y: 20, width: 99999, height: 1 } });
-    expect(s.widgetUrl).toBeNull();
-    expect(s.bounds).toEqual({ x: 10, y: 20, width: 3840, height: 40 });
+    expect(s.widgets).toHaveLength(1);
+    expect(s.widgets[0].url).toBeNull();
+    expect(s.widgets[0].bounds).toEqual({ x: 10, y: 20, width: 3840, height: 40 });
+  });
+
+  it("переносит единственный виджет из настроек старой версии", () => {
+    const token = "a".repeat(64);
+    const s = sanitizeSettings({ widgetUrl: `https://u.github.io/Squidify/w/#${token}`, visible: false });
+    expect(s.widgets).toHaveLength(1);
+    expect(s.widgets[0]).toMatchObject({ id: "main", url: `https://u.github.io/Squidify/w/#${token}`, visible: false });
+  });
+
+  it("хранит несколько виджетов, чинит повторяющиеся id и ограничивает их число", () => {
+    const token = "b".repeat(64);
+    const url = `https://u.github.io/Squidify/w/#${token}`;
+    const many = Array.from({ length: 30 }, () => ({ id: "same", name: "  ", url }));
+    const s = sanitizeSettings({ widgets: many });
+    expect(s.widgets).toHaveLength(12);
+    expect(new Set(s.widgets.map((w) => w.id)).size).toBe(12);
+    expect(s.widgets[0].name).toBe("Виджет 1");
   });
 });
 
