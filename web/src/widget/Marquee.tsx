@@ -19,20 +19,32 @@ const GAP = 48;
  */
 export function Marquee({ text, enabled, speed, className, style, href }: Props) {
   const outer = useRef<HTMLDivElement>(null);
-  const inner = useRef<HTMLSpanElement>(null);
+  const probe = useRef<HTMLSpanElement>(null);
   const [overflow, setOverflow] = useState(0);
 
   useLayoutEffect(() => {
+    // Ширину текста измеряем по отдельному невидимому элементу, который
+    // всегда выглядит одинаково (не зависит от того, прокручивается ли
+    // название сейчас). Раньше мерили сам прокручиваемый текст: после
+    // включения прокрутки его размер читался иначе, режим переключался
+    // туда-обратно, и название «дрожало» (особенно заметно в OBS).
     const measure = () => {
-      if (!outer.current || !inner.current) return;
-      const diff = inner.current.scrollWidth - outer.current.clientWidth;
-      setOverflow(diff > 1 ? inner.current.scrollWidth : 0);
+      if (!outer.current || !probe.current) return;
+      const available = outer.current.clientWidth;
+      const full = Math.ceil(probe.current.getBoundingClientRect().width);
+      // available = 0 означает, что виджет ещё не раскладывается: ждём.
+      if (available <= 0) return;
+      setOverflow((prev) => {
+        // Небольшой гистерезис: граница срабатывания зависит от текущего режима.
+        const next = prev > 0 ? full > available - 1 : full > available + 1;
+        const value = next ? full : 0;
+        return value === prev ? prev : value;
+      });
     };
     measure();
     if (typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(measure);
     if (outer.current) observer.observe(outer.current);
-    if (inner.current) observer.observe(inner.current);
     // Шрифты Google могут догрузиться позже и изменить ширину текста.
     document.fonts?.ready.then(measure).catch(() => undefined);
     return () => observer.disconnect();
@@ -42,11 +54,7 @@ export function Marquee({ text, enabled, speed, className, style, href }: Props)
   const distance = overflow + GAP;
   const duration = distance / Math.max(5, speed);
 
-  const content = (
-    <span ref={inner} className="sw-marquee-text">
-      {text}
-    </span>
-  );
+  const content = <span className="sw-marquee-text">{text}</span>;
 
   return (
     <div
@@ -55,6 +63,7 @@ export function Marquee({ text, enabled, speed, className, style, href }: Props)
       style={style}
       title={text}
     >
+      <span ref={probe} className="sw-marquee-probe" aria-hidden="true" data-text={text} />
       <div
         className="sw-marquee-track"
         style={

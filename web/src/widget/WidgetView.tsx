@@ -1,11 +1,12 @@
 import type { CSSProperties, ReactNode } from "react";
 import type { FeedItem, FeedPlayback } from "../lib/feed";
-import { fontFamily, type WidgetConfig } from "./config";
+import { fontFamily, type Decoration, type WidgetConfig } from "./config";
 import { useGoogleFont } from "./useGoogleFont";
 import { artistNames, formatTime, hexToRgba, luminance } from "./format";
 import { Marquee } from "./Marquee";
 import { SPOTIFY_GREEN, SpotifyIcon } from "./SpotifyIcon";
 import { usePlaybackClock } from "./usePlaybackClock";
+import { Visualizer } from "./Visualizer";
 import "./widget.css";
 
 interface Props {
@@ -78,6 +79,22 @@ function cssVars(c: WidgetConfig): CSSProperties {
     "--sw-padding": `${c.size.padding}px`,
     "--sw-gap": `${c.size.gap}px`,
     "--sw-font": fontFamily(c.text.font),
+    "--sw-font-secondary": fontFamily(c.text.secondaryFont, c.text.font),
+    "--sw-title-style": c.text.italic ? "italic" : "normal",
+    "--sw-artist-weight": c.text.artistWeight,
+    "--sw-fx-color": c.text.effectColor,
+    "--sw-fx-color2": c.text.effectColor2,
+    "--sw-fx-duration": `${Math.round(4800 / c.text.effectSpeed) / 10}s`,
+    "--sw-label-size": `${c.label.size}px`,
+    "--sw-label-color": c.label.color,
+    "--sw-label-spacing": `${c.label.letterSpacing / 100}em`,
+    "--sw-border-style": c.border.style,
+    "--sw-border-width": `${c.border.width}px`,
+    "--sw-border-fx": c.border.effectColor,
+    "--sw-bg-seconds": `${c.background.animationSeconds}s`,
+    "--sw-idle-amount": `${c.animation.idleAmount}px`,
+    "--sw-paused-opacity": c.behavior.pausedOpacity / 100,
+    "--sw-viz-height": `${c.visualizer.height}px`,
     "--sw-title-size": `${c.text.titleSize}px`,
     "--sw-title-weight": c.text.titleWeight,
     "--sw-artist-size": `${c.text.artistSize}px`,
@@ -93,7 +110,10 @@ function cssVars(c: WidgetConfig): CSSProperties {
     "--sw-bg": backgroundCss(c),
     "--sw-backdrop": c.background.blur > 0 ? `blur(${c.background.blur}px)` : "none",
     "--sw-radius": `${c.border.radius}px`,
-    "--sw-border": c.border.width > 0 ? `${c.border.width}px solid ${c.border.color}` : "none",
+    "--sw-border":
+      c.border.width > 0 && c.border.effect !== "rainbow"
+        ? `${c.border.width}px ${c.border.style} ${c.border.color}`
+        : "none",
     "--sw-shadow": shadow,
     "--sw-cover-size": `${c.cover.size}px`,
     "--sw-cover-radius": `${c.cover.radius}px`,
@@ -111,6 +131,65 @@ function cssVars(c: WidgetConfig): CSSProperties {
     "--sw-link-bg": c.link.background,
     "--sw-attribution-size": `${c.attribution.size}px`,
   } as CSSProperties;
+}
+
+function DecorationImage({ d, order, hidden }: { d: Decoration; order: number; hidden: boolean }) {
+  if (!d.enabled || !d.url || hidden) return null;
+  const free = d.placement === "free";
+  const background = d.placement === "background";
+  const flip = d.flip ? "scaleX(-1)" : "";
+  const style: CSSProperties = {
+    opacity: d.opacity / 100,
+    objectFit: d.fit,
+    borderRadius: d.radius,
+  };
+  if (background) {
+    style.transform = flip || undefined;
+  } else {
+    style.width = d.width;
+    style.height = d.height > 0 ? d.height : "auto";
+    if (free) {
+      const x = d.offsetX;
+      const y = d.offsetY;
+      switch (d.anchor) {
+        case "top-left":
+          Object.assign(style, { left: x, top: y, transform: flip || undefined });
+          break;
+        case "top-right":
+          Object.assign(style, { right: x, top: y, transform: flip || undefined });
+          break;
+        case "bottom-left":
+          Object.assign(style, { left: x, bottom: y, transform: flip || undefined });
+          break;
+        case "bottom-right":
+          Object.assign(style, { right: x, bottom: y, transform: flip || undefined });
+          break;
+        default:
+          Object.assign(style, {
+            left: `calc(50% + ${x}px)`,
+            top: `calc(50% + ${y}px)`,
+            transform: `translate(-50%, -50%) ${flip}`.trim(),
+          });
+      }
+    } else {
+      style.order = order;
+      style.transform = flip || undefined;
+    }
+  }
+  return (
+    <img
+      className={`sw-deco sw-deco-${d.placement}`}
+      src={d.url}
+      alt=""
+      referrerPolicy="no-referrer"
+      draggable={false}
+      style={style}
+      onError={(e) => {
+        // Битая ссылка не должна оставлять «сломанную» иконку в кадре.
+        e.currentTarget.style.display = "none";
+      }}
+    />
+  );
 }
 
 function ProgressBar({ c, progress, duration }: { c: WidgetConfig; progress: number; duration: number }) {
@@ -142,7 +221,7 @@ function Times({ c, progress, duration }: { c: WidgetConfig; progress: number; d
 }
 
 export function WidgetView({ config: c, playback, receivedAt, lastItem, preview }: Props) {
-  useGoogleFont(c.text.font);
+  useGoogleFont(c.text.font, c.text.secondaryFont);
   const progress = usePlaybackClock(playback, receivedAt);
 
   let item: FeedItem | null = playback?.item ?? null;
@@ -184,7 +263,16 @@ export function WidgetView({ config: c, playback, receivedAt, lastItem, preview 
     );
   } else if (item) {
     const duration = item.durationMs;
-    const showProgress = c.elements.progress;
+    const viz = c.visualizer;
+    const vizInline = viz.enabled && viz.placement !== "background";
+    const replaceProgress = vizInline && viz.placement === "replace-progress";
+    const showProgress = c.elements.progress || vizInline;
+    const ratio = duration > 0 ? Math.min(1, Math.max(0, progress / duration)) : 0;
+    const vizEl = vizInline && (
+      <div className="sw-viz" style={{ height: viz.height }}>
+        <Visualizer config={viz} playing={Boolean(playback?.isPlaying)} ratio={ratio} seed={item.id || item.title} />
+      </div>
+    );
     const titleRow = c.elements.title && (
       <div className="sw-row sw-title-row">
         <Marquee
@@ -217,10 +305,12 @@ export function WidgetView({ config: c, playback, receivedAt, lastItem, preview 
     );
     const progressBlock = showProgress && (
       <div className="sw-progress-block">
-        <ProgressBar c={c} progress={progress} duration={duration} />
+        {replaceProgress ? vizEl : c.elements.progress && <ProgressBar c={c} progress={progress} duration={duration} />}
         <Times c={c} progress={progress} duration={duration} />
+        {!replaceProgress && vizEl}
       </div>
     );
+    const labelRow = c.label.enabled && c.label.text && <div className="sw-label">{c.label.text}</div>;
     const link = c.elements.spotifyLink && (
       <a
         className="sw-link"
@@ -240,6 +330,7 @@ export function WidgetView({ config: c, playback, receivedAt, lastItem, preview 
       >
         {layout === "progress" ? (
           <>
+            {labelRow}
             <div className="sw-row sw-progress-head">
               {c.elements.title && (
                 <Marquee
@@ -256,6 +347,7 @@ export function WidgetView({ config: c, playback, receivedAt, lastItem, preview 
           </>
         ) : (
           <>
+            {labelRow}
             {titleRow}
             {artistsRow}
             {albumRow}
@@ -285,15 +377,58 @@ export function WidgetView({ config: c, playback, receivedAt, lastItem, preview 
     ) : null;
 
   const compactProgress =
-    layout === "compact" && item && c.elements.progress ? (
+    layout === "compact" && item && (c.elements.progress || (c.visualizer.enabled && c.visualizer.placement !== "background")) ? (
       <div className="sw-compact-progress">
-        <ProgressBar c={c} progress={progress} duration={item.durationMs} />
+        {c.visualizer.enabled && c.visualizer.placement === "replace-progress" ? (
+          <div className="sw-viz" style={{ height: c.visualizer.height }}>
+            <Visualizer
+              config={c.visualizer}
+              playing={Boolean(playback?.isPlaying)}
+              ratio={item.durationMs > 0 ? Math.min(1, progress / item.durationMs) : 0}
+              seed={item.id || item.title}
+            />
+          </div>
+        ) : (
+          c.elements.progress && <ProgressBar c={c} progress={progress} duration={item.durationMs} />
+        )}
       </div>
     ) : null;
 
+  const isPlaying = Boolean(playback?.isPlaying && playback.item);
+  const decoHidden = (d: Decoration) => (d.show === "playing" ? !isPlaying : d.show === "paused" ? isPlaying : false);
+  const decorations = c.decorations.map((d, i) => (
+    <DecorationImage key={i} d={d} order={d.placement === "before" ? 0 : 4} hidden={decoHidden(d)} />
+  ));
+  const backgroundViz =
+    c.visualizer.enabled && c.visualizer.placement === "background" && item ? (
+      <div className="sw-viz-bg">
+        <Visualizer
+          config={c.visualizer}
+          playing={Boolean(playback?.isPlaying)}
+          ratio={item.durationMs > 0 ? Math.min(1, progress / item.durationMs) : 0}
+          seed={item.id || item.title}
+        />
+      </div>
+    ) : null;
+  const rootClasses = [
+    "sw-root",
+    `sw-layout-${layout}`,
+    hidden ? "sw-hidden" : "",
+    preview ? "sw-preview" : "",
+    c.text.effect !== "none" ? `sw-fx sw-fx-${c.text.effect}` : "",
+    c.text.effect !== "none" && c.text.effectAll ? "sw-fx-all" : "",
+    c.border.effect !== "none" && c.border.width > 0 ? `sw-border-${c.border.effect}` : "",
+    c.background.animated && c.background.type === "gradient" ? "sw-bg-animated" : "",
+    c.animation.idle !== "none" ? `sw-idle-${c.animation.idle}` : "",
+    c.cover.side === "end" ? "sw-cover-end" : "",
+    paused ? "sw-is-paused" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <div
-      className={`sw-root sw-layout-${layout} ${hidden ? "sw-hidden" : ""} ${preview ? "sw-preview" : ""}`}
+      className={rootClasses}
       style={cssVars(c)}
       data-status={playback?.status ?? "loading"}
     >
@@ -301,6 +436,8 @@ export function WidgetView({ config: c, playback, receivedAt, lastItem, preview 
         {corner && (item || message) && (
           <div className={`sw-attribution sw-attribution-${position}`}>{attribution}</div>
         )}
+        {backgroundViz}
+        {decorations}
         {coverEl}
         {body}
         {compactProgress}

@@ -45,6 +45,19 @@
   overflow: hidden;
 }
 
+.sw-label {
+  color: var(--sw-label-color);
+  font-family: var(--sw-font-secondary);
+  font-size: var(--sw-label-size);
+  font-weight: 700;
+  letter-spacing: var(--sw-label-spacing);
+  text-transform: uppercase;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .sw-card.sw-has-corner.sw-corner-right .sw-info {
   padding-right: calc(var(--sw-attribution-size) + 6px);
 }
@@ -53,7 +66,20 @@
   padding-left: calc(var(--sw-attribution-size) + 6px);
 }
 
+.sw-cover {
+  order: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.sw-cover-end .sw-cover {
+  order: 3;
+}
+
 .sw-info {
+  order: 2;
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -84,14 +110,20 @@
   line-height: 1.25;
 }
 
+.sw-title {
+  font-style: var(--sw-title-style);
+}
+
 .sw-artist {
   color: var(--sw-artist-color);
+  font-family: var(--sw-font-secondary);
   font-size: var(--sw-artist-size);
-  font-weight: 500;
+  font-weight: var(--sw-artist-weight);
   line-height: 1.3;
 }
 
 .sw-album {
+  font-family: var(--sw-font-secondary);
   color: var(--sw-album-color);
   font-size: var(--sw-album-size);
   line-height: 1.3;
@@ -140,6 +172,26 @@
   white-space: nowrap;
   min-width: 0;
   max-width: 100%;
+}
+
+.sw-marquee {
+  position: relative;
+}
+
+/* Невидимая копия текста для измерения его ширины (см. Marquee.tsx). */
+.sw-marquee-probe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.sw-marquee-probe::after {
+  content: attr(data-text);
 }
 
 .sw-marquee.is-static .sw-marquee-text {
@@ -235,6 +287,7 @@
   display: flex;
   justify-content: space-between;
   color: var(--sw-time-color);
+  font-family: var(--sw-font-secondary);
   font-size: var(--sw-time-size);
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
@@ -439,6 +492,325 @@
 
 @media (prefers-reduced-motion: reduce) {
   .sw-info[class*="sw-anim-"] {
+    animation: none;
+  }
+}
+
+/* Новые стили прогресса */
+.sw-progress-dots {
+  background: transparent;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0 calc(var(--sw-progress-height) / 2), transparent calc(var(--sw-progress-height) / 2 + 0.5px));
+  -webkit-mask-size: calc(var(--sw-progress-height) * 2.2) 100%;
+  mask-image: radial-gradient(circle at 50% 50%, #000 0 calc(var(--sw-progress-height) / 2), transparent calc(var(--sw-progress-height) / 2 + 0.5px));
+  mask-size: calc(var(--sw-progress-height) * 2.2) 100%;
+  background-image: linear-gradient(90deg, var(--sw-progress-track), var(--sw-progress-track));
+}
+
+.sw-progress-dots .sw-progress-fill {
+  border-radius: 0;
+}
+
+.sw-progress-stripes .sw-progress-fill {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.28) 0 6px,
+    transparent 6px 12px
+  );
+  background-color: var(--sw-progress-glow);
+  background-size: 17px 17px;
+  animation: sw-stripes 0.8s linear infinite;
+}
+
+.sw-progress-rainbow .sw-progress-fill {
+  background: linear-gradient(90deg, #ff3b3b, #ffb13b, #f5ff3b, #3bff7a, #3bd9ff, #7a3bff, #ff3bd9, #ff3b3b);
+  background-size: 200% 100%;
+  animation: sw-rainbow 4s linear infinite;
+}
+
+@keyframes sw-stripes {
+  to {
+    background-position: 17px 0;
+  }
+}
+
+@keyframes sw-rainbow {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Визуализатор */
+.sw-viz {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.sw-visualizer {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sw-viz-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.sw-compact-progress .sw-viz {
+  margin-top: 0;
+}
+
+/* Картинки и GIF */
+.sw-deco {
+  flex: none;
+  display: block;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+}
+
+.sw-deco-before,
+.sw-deco-after {
+  position: relative;
+  z-index: 0;
+}
+
+.sw-deco-free {
+  position: absolute;
+  z-index: 0;
+}
+
+.sw-deco-background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* Эффекты текста */
+.sw-fx-gradient .sw-title .sw-marquee-text,
+.sw-fx-rainbow .sw-title .sw-marquee-text,
+.sw-fx-gradient.sw-fx-all .sw-artist .sw-marquee-text,
+.sw-fx-rainbow.sw-fx-all .sw-artist .sw-marquee-text {
+  background-image: linear-gradient(90deg, var(--sw-fx-color), var(--sw-fx-color2));
+  background-size: 100% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.sw-fx-rainbow .sw-title .sw-marquee-text,
+.sw-fx-rainbow.sw-fx-all .sw-artist .sw-marquee-text {
+  background-image: linear-gradient(90deg, #ff3b3b, #ffb13b, #f5ff3b, #3bff7a, #3bd9ff, #7a3bff, #ff3bd9, #ff3b3b);
+  background-size: 200% 100%;
+  animation: sw-rainbow var(--sw-fx-duration) linear infinite;
+}
+
+.sw-fx-gradient .sw-title,
+.sw-fx-rainbow .sw-title,
+.sw-fx-gradient.sw-fx-all .sw-artist,
+.sw-fx-rainbow.sw-fx-all .sw-artist {
+  text-shadow: none;
+}
+
+/* Свечение через filter: text-shadow обрезался бы границами строки. */
+.sw-fx-neon .sw-title,
+.sw-fx-neon.sw-fx-all .sw-artist {
+  filter: drop-shadow(0 0 3px var(--sw-fx-color)) drop-shadow(0 0 9px var(--sw-fx-color))
+    drop-shadow(0 0 18px var(--sw-fx-color));
+}
+
+/* Свечение не должно обрезаться границами строки (у неё overflow: hidden). */
+.sw-fx-neon .sw-title.sw-marquee,
+.sw-fx-neon.sw-fx-all .sw-artist.sw-marquee {
+  padding: 8px 14px;
+  margin: -8px -14px;
+}
+
+.sw-fx-outline .sw-title,
+.sw-fx-outline.sw-fx-all .sw-artist {
+  -webkit-text-stroke: 1.5px var(--sw-fx-color);
+  paint-order: stroke fill;
+}
+
+/* Фон, рамка, непрерывные анимации карточки */
+.sw-bg-animated .sw-card {
+  background-size: 300% 300%;
+  animation: sw-bg-shift var(--sw-bg-seconds) ease-in-out infinite;
+}
+
+@keyframes sw-bg-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.sw-border-pulse .sw-card {
+  animation: sw-border-pulse 2.4s ease-in-out infinite;
+}
+
+.sw-bg-animated.sw-border-pulse .sw-card {
+  animation:
+    sw-bg-shift var(--sw-bg-seconds) ease-in-out infinite,
+    sw-border-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes sw-border-pulse {
+  0%,
+  100% {
+    box-shadow: var(--sw-shadow), 0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: var(--sw-shadow), 0 0 18px 2px var(--sw-border-fx);
+  }
+}
+
+@property --sw-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.sw-border-rainbow .sw-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: var(--sw-border-width);
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--sw-angle),
+    var(--sw-border-fx),
+    #ffb13b,
+    #3bff7a,
+    #3bd9ff,
+    #7a3bff,
+    var(--sw-border-fx)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: sw-angle 4s linear infinite;
+  pointer-events: none;
+  z-index: 3;
+}
+
+@keyframes sw-angle {
+  to {
+    --sw-angle: 360deg;
+  }
+}
+
+.sw-root.sw-idle-float {
+  animation: sw-float 3.6s ease-in-out infinite;
+}
+.sw-root.sw-idle-pulse {
+  animation: sw-pulse 1.6s ease-in-out infinite;
+}
+.sw-root.sw-idle-swing {
+  animation: sw-swing 4s ease-in-out infinite;
+  transform-origin: 50% 0;
+}
+
+@keyframes sw-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(calc(var(--sw-idle-amount) * -1));
+  }
+}
+
+@keyframes sw-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(calc(1 + var(--sw-idle-amount) / 300));
+  }
+}
+
+@keyframes sw-swing {
+  0%,
+  100% {
+    transform: rotate(calc(var(--sw-idle-amount) * -0.25deg));
+  }
+  50% {
+    transform: rotate(calc(var(--sw-idle-amount) * 0.25deg));
+  }
+}
+
+.sw-root.sw-is-paused .sw-card {
+  opacity: var(--sw-paused-opacity);
+}
+
+.sw-anim-flip {
+  animation-name: sw-flip;
+}
+.sw-anim-bounce {
+  animation-name: sw-bounce;
+}
+.sw-anim-drop {
+  animation-name: sw-drop;
+}
+
+@keyframes sw-flip {
+  from {
+    opacity: 0;
+    transform: perspective(500px) rotateX(-70deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sw-bounce {
+  0% {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(-6px);
+  }
+  80% {
+    transform: translateY(2px);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes sw-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sw-bg-animated .sw-card,
+  .sw-border-pulse .sw-card,
+  .sw-root.sw-idle-float,
+  .sw-root.sw-idle-pulse,
+  .sw-root.sw-idle-swing,
+  .sw-progress-stripes .sw-progress-fill,
+  .sw-progress-rainbow .sw-progress-fill {
     animation: none;
   }
 }
