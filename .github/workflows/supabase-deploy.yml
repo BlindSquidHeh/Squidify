@@ -2,10 +2,15 @@ name: Deploy Supabase (migrations + functions)
 
 # Запускается вручную. Нужны секреты репозитория:
 #   SUPABASE_ACCESS_TOKEN — персональный токен (supabase.com/dashboard/account/tokens)
-#   SUPABASE_DB_PASSWORD  — пароль базы данных проекта
+#   SUPABASE_DB_PASSWORD  — пароль базы данных (нужен только при push_db)
 # и переменная SUPABASE_PROJECT_REF.
 on:
   workflow_dispatch:
+    inputs:
+      push_db:
+        description: "Применить миграции (db push). Отключите, если схема уже создана вручную через SQL Editor"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -22,6 +27,10 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - run: supabase link --project-ref "$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
-      - run: supabase db push --password "$SUPABASE_DB_PASSWORD"
-      - run: supabase functions deploy --project-ref "$PROJECT_REF"
+      - name: Deploy Edge Functions
+        run: supabase functions deploy --project-ref "$PROJECT_REF"
+      - name: Apply migrations
+        if: ${{ inputs.push_db }}
+        run: |
+          supabase link --project-ref "$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --password "$SUPABASE_DB_PASSWORD"
