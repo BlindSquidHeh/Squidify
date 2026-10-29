@@ -85,4 +85,52 @@ describe("WidgetView", () => {
     expect(screen.getByText("−2:15")).toBeInTheDocument();
     expect(screen.getByText("Пауза")).toBeInTheDocument();
   });
+
+  it("показывает визуализатор вместо полосы прогресса", () => {
+    const { container } = render(
+      <WidgetView
+        config={normalizeConfig({ visualizer: { enabled: true, placement: "replace-progress" } })}
+        playback={playing}
+        receivedAt={Date.now()}
+      />,
+    );
+    expect(container.querySelector("canvas.sw-visualizer")).not.toBeNull();
+    expect(container.querySelector(".sw-progress")).toBeNull();
+    expect(screen.getByText("1:05")).toBeInTheDocument();
+  });
+
+  it("по умолчанию визуализатора и картинок нет", () => {
+    const { container } = render(<WidgetView config={normalizeConfig({})} playback={playing} receivedAt={Date.now()} />);
+    expect(container.querySelector("canvas")).toBeNull();
+    expect(container.querySelector(".sw-deco")).toBeNull();
+  });
+
+  it("выводит картинку/GIF только по https и скрывает её на паузе при show=playing", () => {
+    const cfg = normalizeConfig({
+      decorations: [
+        { enabled: true, url: "https://example.com/dance.gif", show: "playing", placement: "after" },
+        { enabled: true, url: "file:///C:/sound.gif" },
+      ],
+    });
+    const { container, rerender } = render(<WidgetView config={cfg} playback={playing} receivedAt={Date.now()} />);
+    const imgs = container.querySelectorAll("img.sw-deco");
+    expect(imgs).toHaveLength(1);
+    expect(imgs[0]).toHaveAttribute("src", "https://example.com/dance.gif");
+    rerender(
+      <WidgetView config={cfg} playback={{ ...playing, isPlaying: false }} receivedAt={Date.now()} />,
+    );
+    expect(container.querySelector("img.sw-deco")).toBeNull();
+  });
+
+  it("показывает свою подпись и включает эффект текста классом", () => {
+    const { container } = render(
+      <WidgetView
+        config={normalizeConfig({ label: { enabled: true, text: "NOW PLAYING" }, text: { effect: "neon" } })}
+        playback={playing}
+        receivedAt={Date.now()}
+      />,
+    );
+    expect(screen.getByText("NOW PLAYING")).toBeInTheDocument();
+    expect(container.querySelector(".sw-root")).toHaveClass("sw-fx-neon");
+  });
 });

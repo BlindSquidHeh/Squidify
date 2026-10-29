@@ -6,6 +6,8 @@ export const TABS = [
   { id: "background", label: "Фон" },
   { id: "cover", label: "Обложка" },
   { id: "progress", label: "Прогресс" },
+  { id: "visualizer", label: "Визуализатор" },
+  { id: "decor", label: "Картинки и GIF" },
   { id: "animation", label: "Анимация" },
   { id: "behavior", label: "Поведение" },
   { id: "brand", label: "Spotify" },

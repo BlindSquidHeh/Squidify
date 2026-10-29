@@ -3,14 +3,17 @@ import { googleFontUrl, type WidgetConfig } from "./config";
 
 const loadedFonts = new Set<string>();
 
-export function useGoogleFont(font: WidgetConfig["text"]["font"]) {
+export function useGoogleFont(...fonts: (WidgetConfig["text"]["font"] | WidgetConfig["text"]["secondaryFont"])[]) {
+  const key = fonts.join("|");
   useEffect(() => {
-    const url = googleFontUrl(font);
-    if (!url || loadedFonts.has(url)) return;
-    loadedFonts.add(url);
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = url;
-    document.head.appendChild(link);
-  }, [font]);
+    for (const font of key.split("|")) {
+      const url = googleFontUrl(font as WidgetConfig["text"]["secondaryFont"]);
+      if (!url || loadedFonts.has(url)) continue;
+      loadedFonts.add(url);
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = url;
+      document.head.appendChild(link);
+    }
+  }, [key]);
 }

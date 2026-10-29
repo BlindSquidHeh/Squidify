@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_CONFIG, mergeConfig, normalizeConfig, suggestedSourceSize } from "./config";
+import { DEFAULT_CONFIG, imageUrl, mergeConfig, normalizeConfig, suggestedSourceSize } from "./config";
 import { BUILT_IN_PRESETS } from "./presets";
 
 describe("normalizeConfig", () => {
@@ -78,5 +78,69 @@ describe("suggestedSourceSize", () => {
     const size = suggestedSourceSize(c);
     expect(size.width).toBe(400 + 2 * (24 + 8));
     expect(size.height).toBe(100 + 2 * (24 + 8));
+  });
+});
+
+describe("imageUrl", () => {
+  it("пропускает только https без логина и пароля", () => {
+    expect(imageUrl("https://i.imgur.com/a.gif")).toBe("https://i.imgur.com/a.gif");
+    expect(imageUrl("  https://example.com/x.png  ")).toBe("https://example.com/x.png");
+    for (const bad of [
+      "http://example.com/a.gif",
+      "file:///C:/Users/Administrator/Downloads/sound.gif",
+      "C:\\Users\\Administrator\\Downloads\\sound.gif",
+      "javascript:alert(1)",
+      "data:image/gif;base64,R0lGOD",
+      "https://user:pass@example.com/a.gif",
+      'https://example.com/a.gif"onerror="x',
+      "",
+      42,
+    ]) {
+      expect(imageUrl(bad)).toBe("");
+    }
+  });
+});
+
+describe("новые настройки", () => {
+  it("старая конфигурация без новых полей получает значения по умолчанию", () => {
+    const c = normalizeConfig({ layout: "compact", text: { font: "rubik" } });
+    expect(c.visualizer).toEqual(DEFAULT_CONFIG.visualizer);
+    expect(c.decorations).toEqual(DEFAULT_CONFIG.decorations);
+    expect(c.text.effect).toBe("none");
+    expect(c.text.font).toBe("rubik");
+  });
+
+  it("ограничивает визуализатор и картинки, всегда возвращает два слота", () => {
+    const c = normalizeConfig({
+      visualizer: { enabled: true, bars: 9999, height: 1, style: "nope", color: "url(x)" },
+      decorations: [{ enabled: true, url: "http://x.y/a.gif", width: 99999, placement: "free", offsetX: 9999 }],
+    });
+    expect(c.visualizer.bars).toBe(128);
+    expect(c.visualizer.height).toBe(8);
+    expect(c.visualizer.style).toBe(DEFAULT_CONFIG.visualizer.style);
+    expect(c.visualizer.color).toBe(DEFAULT_CONFIG.visualizer.color);
+    expect(c.decorations).toHaveLength(2);
+    expect(c.decorations[0].url).toBe("");
+    expect(c.decorations[0].width).toBe(800);
+    expect(c.decorations[0].offsetX).toBe(400);
+    expect(c.decorations[1]).toEqual(DEFAULT_CONFIG.decorations[1]);
+  });
+
+  it("не принимает посторонние значения в списках", () => {
+    const c = normalizeConfig({
+      text: { effect: "evil", secondaryFont: "Comic Sans" },
+      border: { style: "url(x)", effect: "rm" },
+      animation: { idle: "x", trackChange: "x" },
+    });
+    expect(c.text.effect).toBe("none");
+    expect(c.text.secondaryFont).toBe("same");
+    expect(c.border.style).toBe("solid");
+    expect(c.border.effect).toBe("none");
+    expect(c.animation.idle).toBe("none");
+    expect(c.animation.trackChange).toBe(DEFAULT_CONFIG.animation.trackChange);
+  });
+
+  it("пресеты проходят нормализацию без изменений", () => {
+    for (const p of BUILT_IN_PRESETS) expect(normalizeConfig(p.config)).toEqual(p.config);
   });
 });
