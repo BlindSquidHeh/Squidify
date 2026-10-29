@@ -180,6 +180,8 @@ export interface WidgetConfig {
     radius: number;
     shadow: boolean;
     side: (typeof COVER_SIDES)[number];
+    /** Картинка для треков без обложки (например, локальных файлов). */
+    fallbackUrl: string;
   };
   progress: {
     style: (typeof PROGRESS_STYLES)[number];
@@ -298,7 +300,7 @@ export const DEFAULT_CONFIG: WidgetConfig = {
   background: { type: "solid", color: "#121212", color2: "#1db954", angle: 135, opacity: 88, blur: 0, animated: false, animationSeconds: 12 },
   border: { radius: 16, width: 0, color: "#ffffff", style: "solid", effect: "none", effectColor: "#ff3cac" },
   shadow: { enabled: true, color: "#000000", blur: 24, offsetY: 8, opacity: 40 },
-  cover: { size: 72, radius: 4, shadow: true, side: "start" },
+  cover: { size: 72, radius: 4, shadow: true, side: "start", fallbackUrl: "" },
   progress: {
     style: "bar",
     height: 4,
@@ -514,6 +516,7 @@ export function normalizeConfig(input: unknown): WidgetConfig {
       radius: num(cover.radius, 0, 8, d.cover.radius),
       shadow: bool(cover.shadow, d.cover.shadow),
       side: oneOf(cover.side, COVER_SIDES, d.cover.side),
+      fallbackUrl: imageUrl(cover.fallbackUrl),
     },
     progress: {
       style: oneOf(pr.style, PROGRESS_STYLES, d.progress.style),
