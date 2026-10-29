@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld("squidifySettings", {
   get: () => ipcRenderer.invoke("settings:get"),
   update: (patch: Record<string, unknown>) => ipcRenderer.invoke("settings:update", patch),
   action: (name: ActionName, id?: string) => ipcRenderer.invoke("settings:action", name, id),
+  diagnostics: () => ipcRenderer.invoke("settings:diagnostics"),
   addWidget: () => ipcRenderer.invoke("widgets:add"),
   removeWidget: (id: string) => ipcRenderer.invoke("widgets:remove", id),
   updateWidget: (id: string, patch: Record<string, unknown>) => ipcRenderer.invoke("widgets:update", id, patch),

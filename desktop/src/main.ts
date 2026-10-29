@@ -9,12 +9,14 @@
 
 import {
   app,
+  clipboard,
   BrowserWindow,
   webFrameMain,
   dialog,
   globalShortcut,
   ipcMain,
   Menu,
+  nativeTheme,
   nativeImage,
   powerMonitor,
   screen,
@@ -759,6 +761,45 @@ function registerIpc() {
     }
     updateSettings(next);
     return { ok: true, settings: publicSettings() };
+  });
+
+  // Сведения для разбора проблем с отображением: пользователь вставляет их в чат одним нажатием.
+  ipcMain.handle("settings:diagnostics", async (event) => {
+    if (!isTrustedSettings(event)) throw new Error("forbidden");
+    const lines: string[] = [
+      `Squidify ${app.getVersion()}, Electron ${process.versions.electron}, Chromium ${process.versions.chrome}`,
+      `Windows ${process.getSystemVersion()}, тёмная тема системы: ${nativeTheme.shouldUseDarkColors}`,
+      `Видеокарта в настройках: ${settings.gpu}; состояние: ${JSON.stringify(app.getGPUFeatureStatus())}`,
+      `Мониторы: ${JSON.stringify(screen.getAllDisplays().map((d) => ({ b: d.bounds, f: d.scaleFactor })))}`,
+    ];
+    for (const entry of settings.widgets) {
+      const win = windowOf(entry.id);
+      lines.push(`Виджет ${entry.name}: ${entry.placement}, окно ${win ? JSON.stringify(win.getBounds()) : "нет"}, фон окна ${win?.getBackgroundColor()}`);
+      if (!win) continue;
+      for (const frame of win.webContents.mainFrame.frames) {
+        try {
+          const info = await frame.executeJavaScript(`(function () {
+            var r = document.documentElement;
+            var cs = getComputedStyle(r);
+            return JSON.stringify({
+              className: r.className,
+              colorScheme: cs.colorScheme,
+              htmlBg: cs.backgroundColor,
+              bodyBg: getComputedStyle(document.body).backgroundColor,
+              meta: !!document.querySelector('meta[name="color-scheme"]'),
+              prefersDark: matchMedia("(prefers-color-scheme: dark)").matches,
+              size: innerWidth + "x" + innerHeight
+            });
+          })()`);
+          lines.push(`  страница: ${info}`);
+        } catch (error) {
+          lines.push(`  страница: ошибка ${String(error)}`);
+        }
+      }
+    }
+    const text = lines.join("\n");
+    clipboard.writeText(text);
+    return text;
   });
 
   ipcMain.handle("widgets:add", (event) => {
