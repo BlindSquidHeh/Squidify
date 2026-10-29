@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useDialogs } from "../components/dialog-context";
 import { CopyField } from "../components/CopyField";
 import {
   disconnectSpotify,
@@ -15,6 +16,7 @@ import { spotifyRedirectUri } from "../lib/urls";
 const CLIENT_ID_KEY = "squidify-last-client-id";
 
 export default function SpotifySetup() {
+  const dialogs = useDialogs();
   const { connection, loading, reload } = useSpotifyConnection();
   const [server, setServer] = useState<SpotifyServerConfig | null>(null);
   const [mode, setMode] = useState<"own" | "shared">("own");
@@ -80,12 +82,13 @@ export default function SpotifySetup() {
   };
 
   const disconnect = async () => {
-    if (
-      !window.confirm(
-        "Отключить Spotify? Токены доступа и кеш воспроизведения будут удалены с сервера, виджеты перестанут показывать музыку.",
-      )
-    )
-      return;
+    const ok = await dialogs.confirm({
+      title: "Отключить Spotify?",
+      message: "Токены доступа и кеш воспроизведения будут удалены с сервера, виджеты перестанут показывать музыку.",
+      confirmLabel: "Отключить",
+      danger: true,
+    });
+    if (!ok) return;
     setBusy(true);
     setError(null);
     try {

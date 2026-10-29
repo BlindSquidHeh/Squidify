@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useDialogs } from "../components/dialog-context";
 import { useNavigate } from "react-router-dom";
 import { authErrorMessage, deleteAccount } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -6,6 +7,7 @@ import { config } from "../lib/env";
 import { getSupabase } from "../lib/supabase";
 
 export default function Account() {
+  const dialogs = useDialogs();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
@@ -21,8 +23,14 @@ export default function Account() {
         <p className="muted">В демо-режиме аккаунтов нет. Данные демо хранятся в localStorage этого браузера.</p>
         <button
           className="btn danger"
-          onClick={() => {
-            if (window.confirm("Удалить все демо-виджеты и пресеты из этого браузера?")) {
+          onClick={async () => {
+            const ok = await dialogs.confirm({
+              title: "Очистить демо-данные?",
+              message: "Все демо-виджеты и пресеты в этом браузере будут удалены.",
+              confirmLabel: "Очистить",
+              danger: true,
+            });
+            if (ok) {
               localStorage.removeItem("squidify-demo-v1");
               navigate("/app");
             }

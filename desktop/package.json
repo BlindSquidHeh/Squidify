@@ -17,6 +17,7 @@
   },
   "build": {
     "appId": "io.github.squidify.desktop",
+    "electronVersion": "44.10.0",
     "productName": "Squidify",
     "directories": {
       "output": "release",
