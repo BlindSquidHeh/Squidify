@@ -91,6 +91,13 @@ function cssVars(c: WidgetConfig): CSSProperties {
     "--sw-border-style": c.border.style,
     "--sw-border-width": `${c.border.width}px`,
     "--sw-border-fx": c.border.effectColor,
+    "--sw-border-fx-soft": hexToRgba(c.border.effectColor, c.border.effectIntensity),
+    "--sw-bfx-size": `${c.border.effectSize}px`,
+    "--sw-bfx-duration": `${Math.max(0.2, Math.round(1200 / c.border.effectSpeed) / 10)}s`,
+    "--sw-bfx-rainbow": `${Math.max(0.5, Math.round(2000 / c.border.effectSpeed) / 10)}s`,
+    "--sw-ring-w": `${c.progress.height}px`,
+    "--sw-ring-off": `${c.progress.height + 3}px`,
+    "--sw-ring-track": c.progress.trackColor,
     "--sw-bg-seconds": `${c.background.animationSeconds}s`,
     "--sw-idle-amount": `${c.animation.idleAmount}px`,
     "--sw-paused-opacity": c.behavior.pausedOpacity / 100,
@@ -195,11 +202,35 @@ function DecorationImage({ d, order, hidden }: { d: Decoration; order: number; h
   );
 }
 
-function ProgressBar({ c, progress, duration }: { c: WidgetConfig; progress: number; duration: number }) {
+/** Прогресс по периметру обложки: обводка рисуется снаружи и не закрывает картинку. */
+function CoverRing({ ratio }: { ratio: number }) {
+  return (
+    <svg className="sw-cover-ring" aria-hidden="true">
+      <rect className="sw-ring-track" pathLength={100} />
+      <rect className="sw-ring-fill" pathLength={100} strokeDasharray={`${Math.max(0.01, ratio * 100)} 100`} />
+    </svg>
+  );
+}
+
+function ProgressBar({
+  c,
+  progress,
+  duration,
+  ringActive,
+}: {
+  c: WidgetConfig;
+  progress: number;
+  duration: number;
+  /** Прогресс уже нарисован вокруг обложки, полоса не нужна. */
+  ringActive: boolean;
+}) {
   const ratio = duration > 0 ? Math.min(1, Math.max(0, progress / duration)) : 0;
+  if (ringActive) return null;
+  // Без обложки «вокруг обложки» показывается как обычная полоса.
+  const style = c.progress.style === "cover-ring" ? "bar" : c.progress.style;
   return (
     <div
-      className={`sw-progress sw-progress-${c.progress.style}`}
+      className={`sw-progress sw-progress-${style}`}
       role="progressbar"
       aria-valuemin={0}
       aria-valuemax={Math.round(duration / 1000)}
@@ -249,6 +280,7 @@ export function WidgetView({ config: c, playback, receivedAt, lastItem, preview 
 
   const layout = c.layout;
   const showCover = c.elements.cover && layout !== "text" && layout !== "progress";
+  const ringActive = c.progress.style === "cover-ring" && c.elements.progress && showCover;
   const iconColor = attributionColor(c);
   const position = attributionPosition(c, showCover);
   const corner = position !== "inline";
@@ -308,7 +340,7 @@ export function WidgetView({ config: c, playback, receivedAt, lastItem, preview 
     );
     const progressBlock = showProgress && (
       <div className="sw-progress-block">
-        {replaceProgress ? vizEl : c.elements.progress && <ProgressBar c={c} progress={progress} duration={duration} />}
+        {replaceProgress ? vizEl : c.elements.progress && <ProgressBar c={c} progress={progress} duration={duration} ringActive={ringActive} />}
         <Times c={c} progress={progress} duration={duration} />
         {!replaceProgress && vizEl}
       </div>
@@ -362,29 +394,38 @@ export function WidgetView({ config: c, playback, receivedAt, lastItem, preview 
     );
   }
 
+  const fallbackStyle: CSSProperties = {
+    objectFit: c.cover.fallbackFit,
+    transform: `translate(${c.cover.fallbackX}%, ${c.cover.fallbackY}%) scale(${c.cover.fallbackScale / 100})`,
+  };
   const coverEl =
     showCover && item ? (
-      <a
-        className="sw-cover"
-        href={item.albumUrl ?? item.url ?? undefined}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={item.album ?? item.title}
-      >
-        {item.coverUrl ? (
-          <img src={item.coverUrl} alt={item.album ?? item.title} referrerPolicy="no-referrer" draggable={false} />
-        ) : c.cover.fallbackUrl ? (
-          <img src={c.cover.fallbackUrl} alt="" referrerPolicy="no-referrer" draggable={false} />
-        ) : (
-          <div className="sw-cover-empty">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M9 18V5l11-2v13" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="6.5" cy="18" r="2.5" fill="currentColor" />
-              <circle cx="17.5" cy="16" r="2.5" fill="currentColor" />
-            </svg>
-          </div>
-        )}
-      </a>
+      <div className={`sw-cover${ringActive ? " sw-cover-ringed" : ""}`}>
+        <a
+          className="sw-cover-art"
+          href={item.albumUrl ?? item.url ?? undefined}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={item.album ?? item.title}
+        >
+          {item.coverUrl ? (
+            <img src={item.coverUrl} alt={item.album ?? item.title} referrerPolicy="no-referrer" draggable={false} />
+          ) : (
+            <div className="sw-cover-empty" style={{ background: hexToRgba(c.cover.fallbackBg, c.cover.fallbackBgOpacity) }}>
+              {c.cover.fallbackUrl ? (
+                <img src={c.cover.fallbackUrl} alt="" referrerPolicy="no-referrer" draggable={false} style={fallbackStyle} />
+              ) : (
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9 18V5l11-2v13" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="6.5" cy="18" r="2.5" fill="currentColor" />
+                  <circle cx="17.5" cy="16" r="2.5" fill="currentColor" />
+                </svg>
+              )}
+            </div>
+          )}
+        </a>
+        {ringActive && <CoverRing ratio={item.durationMs > 0 ? Math.min(1, progress / item.durationMs) : 0} />}
+      </div>
     ) : null;
 
   const compactProgress =
@@ -400,7 +441,7 @@ export function WidgetView({ config: c, playback, receivedAt, lastItem, preview 
             />
           </div>
         ) : (
-          c.elements.progress && <ProgressBar c={c} progress={progress} duration={item.durationMs} />
+          c.elements.progress && <ProgressBar c={c} progress={progress} duration={item.durationMs} ringActive={ringActive} />
         )}
       </div>
     ) : null;

@@ -168,3 +168,18 @@ describe("новые настройки", () => {
     expect(c.text.lineHeight).toBe(90);
   });
 });
+
+describe("эффекты рамки и своя обложка", () => {
+  it("ограничивает параметры эффектов и положения своей картинки", () => {
+    const c = normalizeConfig({
+      border: { effect: "wave", effectSpeed: 0, effectSize: 999, effectIntensity: 1 },
+      cover: { fallbackScale: 5, fallbackX: 500, fallbackY: -500, fallbackFit: "weird", fallbackBgOpacity: 200 },
+      progress: { style: "cover-ring" },
+    });
+    expect(c.border.effect).toBe("wave");
+    expect([c.border.effectSpeed, c.border.effectSize, c.border.effectIntensity]).toEqual([1, 60, 10]);
+    expect([c.cover.fallbackScale, c.cover.fallbackX, c.cover.fallbackY, c.cover.fallbackBgOpacity]).toEqual([10, 100, -100, 100]);
+    expect(c.cover.fallbackFit).toBe("contain");
+    expect(c.progress.style).toBe("cover-ring");
+  });
+});

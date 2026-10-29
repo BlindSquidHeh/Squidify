@@ -17,6 +17,9 @@ interface Props {
   tab: TabId;
   config: WidgetConfig;
   onChange: (config: WidgetConfig) => void;
+  /** Показывать в предпросмотре трек без обложки (как локальный файл). */
+  previewLocal?: boolean;
+  onPreviewLocal?: (value: boolean) => void;
 }
 
 const ALIGN_OPTIONS = [
@@ -120,7 +123,7 @@ function DecorationEditor({ d, onChange }: { d: Decoration; onChange: (d: Decora
   );
 }
 
-export function EditorSections({ tab, config: c, onChange }: Props) {
+export function EditorSections({ tab, config: c, onChange, previewLocal = false, onPreviewLocal }: Props) {
   function set<S extends Section, K extends keyof WidgetConfig[S]>(section: S, key: K, value: WidgetConfig[S][K]) {
     onChange({ ...c, [section]: { ...c[section], [key]: value } });
   }
@@ -198,16 +201,47 @@ export function EditorSections({ tab, config: c, onChange }: Props) {
                 options={[
                   { value: "none", label: "Нет" },
                   { value: "pulse", label: "Пульсирующее свечение" },
+                  { value: "wave", label: "Расходящиеся волны" },
+                  { value: "blink", label: "Мигание" },
                   { value: "rainbow", label: "Бегущая радуга" },
                 ]}
                 onChange={(v) => set("border", "effect", v)}
               />
               {c.border.effect !== "none" && (
-                <ColorInput
-                  label="Цвет эффекта"
-                  value={c.border.effectColor}
-                  onChange={(v) => set("border", "effectColor", v)}
-                />
+                <>
+                  <ColorInput
+                    label="Цвет эффекта"
+                    value={c.border.effectColor}
+                    onChange={(v) => set("border", "effectColor", v)}
+                  />
+                  <Slider
+                    label="Скорость"
+                    value={c.border.effectSpeed}
+                    min={1}
+                    max={100}
+                    unit=""
+                    onChange={(v) => set("border", "effectSpeed", v)}
+                  />
+                  {c.border.effect !== "rainbow" && (
+                    <Slider
+                      label="Размах"
+                      value={c.border.effectSize}
+                      min={2}
+                      max={60}
+                      onChange={(v) => set("border", "effectSize", v)}
+                    />
+                  )}
+                  {c.border.effect !== "rainbow" && (
+                    <Slider
+                      label="Яркость"
+                      value={c.border.effectIntensity}
+                      min={10}
+                      max={100}
+                      unit="%"
+                      onChange={(v) => set("border", "effectIntensity", v)}
+                    />
+                  )}
+                </>
               )}
             </>
           )}
@@ -479,14 +513,74 @@ export function EditorSections({ tab, config: c, onChange }: Props) {
             ]}
             onChange={(v) => set("cover", "side", v)}
           />
+          <p className="muted small" style={{ margin: 0 }}>
+            Spotify не отдаёт обложки локальных файлов. Для таких треков можно показать свою картинку или GIF и
+            настроить её положение, размер и фон.
+          </p>
+          {onPreviewLocal && (
+            <Toggle
+              label="Предпросмотр: трек без обложки"
+              checked={previewLocal}
+              onChange={onPreviewLocal}
+            />
+          )}
           <UrlInput
             label="Картинка, если обложки нет"
             value={c.cover.fallbackUrl}
             onChange={(v) => set("cover", "fallbackUrl", v)}
           />
-          <p className="muted small" style={{ margin: 0 }}>
-            Spotify не отдаёт обложки локальных файлов, поэтому для них показывается эта картинка (или значок ноты).
-          </p>
+          {c.cover.fallbackUrl && (
+            <>
+              <Select
+                label="Как вписать"
+                value={c.cover.fallbackFit}
+                options={[
+                  { value: "contain", label: "Целиком" },
+                  { value: "cover", label: "С обрезкой по рамке" },
+                  { value: "fill", label: "Растянуть" },
+                ]}
+                onChange={(v) => set("cover", "fallbackFit", v)}
+              />
+              <Slider
+                label="Масштаб картинки"
+                value={c.cover.fallbackScale}
+                min={10}
+                max={400}
+                unit="%"
+                onChange={(v) => set("cover", "fallbackScale", v)}
+              />
+              <Slider
+                label="Сдвиг по горизонтали"
+                value={c.cover.fallbackX}
+                min={-100}
+                max={100}
+                unit="%"
+                onChange={(v) => set("cover", "fallbackX", v)}
+              />
+              <Slider
+                label="Сдвиг по вертикали"
+                value={c.cover.fallbackY}
+                min={-100}
+                max={100}
+                unit="%"
+                onChange={(v) => set("cover", "fallbackY", v)}
+              />
+            </>
+          )}
+          <ColorInput
+            label="Фон под картинкой"
+            value={c.cover.fallbackBg}
+            onChange={(v) => set("cover", "fallbackBg", v)}
+          />
+          <Slider
+            label="Прозрачность фона"
+            value={c.cover.fallbackBgOpacity}
+            min={0}
+            max={100}
+            unit="%"
+            onChange={(v) => set("cover", "fallbackBgOpacity", v)}
+            hint="Для PNG и GIF с прозрачным фоном: выберите цвет и сделайте его непрозрачным"
+          />
           <p className="muted small" style={{ margin: 0 }}>
             По правилам Spotify обложку нельзя обрезать, размывать, анимировать и закрывать другими элементами,
             поэтому эти эффекты недоступны. Скругление ограничено 8px.
@@ -509,6 +603,7 @@ export function EditorSections({ tab, config: c, onChange }: Props) {
               { value: "dots", label: "Точки" },
               { value: "stripes", label: "Бегущие полосы" },
               { value: "rainbow", label: "Радуга" },
+              { value: "cover-ring", label: "Вокруг обложки" },
             ]}
             onChange={(v) => set("progress", "style", v)}
           />

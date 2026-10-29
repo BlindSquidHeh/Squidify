@@ -48,12 +48,12 @@ export const ALIGNS = ["start", "center", "end"] as const;
 export type Align = (typeof ALIGNS)[number];
 
 export const BACKGROUND_TYPES = ["solid", "gradient", "none"] as const;
-export const PROGRESS_STYLES = ["bar", "line", "glow", "segmented", "dots", "stripes", "rainbow"] as const;
+export const PROGRESS_STYLES = ["bar", "line", "glow", "segmented", "dots", "stripes", "rainbow", "cover-ring"] as const;
 export const TRACK_ANIMATIONS = ["none", "fade", "slide-up", "slide-left", "scale", "blur", "flip", "bounce", "drop"] as const;
 export const IDLE_EFFECTS = ["none", "float", "pulse", "swing"] as const;
 export const TEXT_EFFECTS = ["none", "gradient", "rainbow", "neon", "outline"] as const;
 export const BORDER_STYLES = ["solid", "dashed", "dotted", "double"] as const;
-export const BORDER_EFFECTS = ["none", "pulse", "rainbow"] as const;
+export const BORDER_EFFECTS = ["none", "pulse", "wave", "blink", "rainbow"] as const;
 export const COVER_SIDES = ["start", "end"] as const;
 export const VISUALIZER_STYLES = ["bars", "mirror", "wave", "dots", "blocks", "soundcloud"] as const;
 export const VISUALIZER_PLACEMENTS = ["replace-progress", "below", "background"] as const;
@@ -170,6 +170,12 @@ export interface WidgetConfig {
     color: string;
     style: (typeof BORDER_STYLES)[number];
     effect: (typeof BORDER_EFFECTS)[number];
+    /** Скорость эффекта, 1..100. */
+    effectSpeed: number;
+    /** Размах свечения и волн, px. */
+    effectSize: number;
+    /** Яркость эффекта, 10..100. */
+    effectIntensity: number;
     effectColor: string;
   };
   shadow: {
@@ -190,6 +196,16 @@ export interface WidgetConfig {
     fallbackUrl: string;
     borderWidth: number;
     borderColor: string;
+    /** Как вписать свою картинку в рамку обложки. */
+    fallbackFit: (typeof DECORATION_FITS)[number];
+    /** Масштаб своей картинки, %. */
+    fallbackScale: number;
+    /** Сдвиг своей картинки внутри обложки, % от размера. */
+    fallbackX: number;
+    fallbackY: number;
+    /** Фон под своей картинкой, нужен для PNG и GIF с прозрачностью. */
+    fallbackBg: string;
+    fallbackBgOpacity: number;
   };
   progress: {
     style: (typeof PROGRESS_STYLES)[number];
@@ -309,9 +325,9 @@ export const DEFAULT_CONFIG: WidgetConfig = {
   label: { enabled: false, text: "СЕЙЧАС ИГРАЕТ", size: 10, color: "#1db954", letterSpacing: 12 },
   colors: { title: "#ffffff", artist: "#b3b3b3", album: "#8a8a8a", time: "#b3b3b3" },
   background: { type: "solid", color: "#121212", color2: "#1db954", angle: 135, opacity: 88, blur: 0, animated: false, animationSeconds: 12 },
-  border: { radius: 16, width: 0, color: "#ffffff", style: "solid", effect: "none", effectColor: "#ff3cac" },
+  border: { radius: 16, width: 0, color: "#ffffff", style: "solid", effect: "none", effectColor: "#ff3cac", effectSpeed: 50, effectSize: 18, effectIntensity: 100 },
   shadow: { enabled: true, color: "#000000", blur: 24, offsetY: 8, opacity: 40 },
-  cover: { size: 72, radius: 4, shadow: true, side: "start", fallbackUrl: "", borderWidth: 0, borderColor: "#ffffff" },
+  cover: { size: 72, radius: 4, shadow: true, side: "start", fallbackUrl: "", borderWidth: 0, borderColor: "#ffffff", fallbackFit: "contain", fallbackScale: 100, fallbackX: 0, fallbackY: 0, fallbackBg: "#ffffff", fallbackBgOpacity: 8 },
   progress: {
     style: "bar",
     height: 4,
@@ -517,6 +533,9 @@ export function normalizeConfig(input: unknown): WidgetConfig {
       style: oneOf(border.style, BORDER_STYLES, d.border.style),
       effect: oneOf(border.effect, BORDER_EFFECTS, d.border.effect),
       effectColor: color(border.effectColor, d.border.effectColor),
+      effectSpeed: num(border.effectSpeed, 1, 100, d.border.effectSpeed),
+      effectSize: num(border.effectSize, 2, 60, d.border.effectSize),
+      effectIntensity: num(border.effectIntensity, 10, 100, d.border.effectIntensity),
     },
     shadow: {
       enabled: bool(sh.enabled, d.shadow.enabled),
@@ -533,6 +552,12 @@ export function normalizeConfig(input: unknown): WidgetConfig {
       fallbackUrl: imageUrl(cover.fallbackUrl),
       borderWidth: num(cover.borderWidth, 0, 8, d.cover.borderWidth),
       borderColor: color(cover.borderColor, d.cover.borderColor),
+      fallbackFit: oneOf(cover.fallbackFit, DECORATION_FITS, d.cover.fallbackFit),
+      fallbackScale: num(cover.fallbackScale, 10, 400, d.cover.fallbackScale),
+      fallbackX: num(cover.fallbackX, -100, 100, d.cover.fallbackX),
+      fallbackY: num(cover.fallbackY, -100, 100, d.cover.fallbackY),
+      fallbackBg: color(cover.fallbackBg, d.cover.fallbackBg),
+      fallbackBgOpacity: num(cover.fallbackBgOpacity, 0, 100, d.cover.fallbackBgOpacity),
     },
     progress: {
       style: oneOf(pr.style, PROGRESS_STYLES, d.progress.style),
