@@ -278,14 +278,21 @@ function createWidgetWindow(entry: WidgetEntry) {
   });
 }
 
-function applyWindowFlags(id?: string) {
+/**
+ * Положение «поверх всех окон» трогаем только когда оно действительно менялось:
+ * повторный вызов setAlwaysOnTop при фиксации окна в Windows сбрасывал уровень окна.
+ */
+function applyWindowFlags(id?: string, topmost = true) {
   for (const [wid, win] of windows) {
     if (win.isDestroyed() || (id && wid !== id)) continue;
-    // Уровень screen-saver держит окно поверх полноэкранных окон в оконном режиме.
-    win.setAlwaysOnTop(settings.alwaysOnTop, "screen-saver");
-    win.setVisibleOnAllWorkspaces(settings.alwaysOnTop, { visibleOnFullScreen: true });
+    if (topmost) {
+      // Уровень screen-saver держит окно поверх полноэкранных окон в оконном режиме.
+      win.setAlwaysOnTop(settings.alwaysOnTop, "screen-saver");
+      win.setVisibleOnAllWorkspaces(settings.alwaysOnTop, { visibleOnFullScreen: true });
+    }
     win.setMovable(!settings.locked);
     win.setIgnoreMouseEvents(settings.locked && settings.clickThrough, { forward: true });
+    if (settings.alwaysOnTop && win.isVisible()) win.moveTop();
     sendShellState(wid);
   }
 }
@@ -393,7 +400,9 @@ function updateSettings(patch: Partial<Omit<Settings, "widgets">>, refresh = tru
   settings = { ...settings, ...patch };
   saveSettings(settings);
   if (refresh) {
-    if ("alwaysOnTop" in patch || "locked" in patch || "clickThrough" in patch) applyWindowFlags();
+    if ("alwaysOnTop" in patch || "locked" in patch || "clickThrough" in patch) {
+      applyWindowFlags(undefined, "alwaysOnTop" in patch);
+    }
     else if ("autoSize" in patch) for (const id of windows.keys()) sendShellState(id);
     if ("hotkey" in patch) registerHotkey();
     if ("openAtLogin" in patch) app.setLoginItemSettings({ openAtLogin: settings.openAtLogin });
