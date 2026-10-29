@@ -21,6 +21,12 @@
     }
     origin = new URL(url).origin;
     empty.hidden = true;
+    // Смена только #токена не перезагружает страницу, поэтому iframe создаётся заново.
+    var fresh = frame.cloneNode(false);
+    fresh.removeAttribute("src");
+    fresh.setAttribute("data-url", url);
+    frame.replaceWith(fresh);
+    frame = fresh;
     frame.src = url;
   }
 

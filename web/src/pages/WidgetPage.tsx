@@ -32,6 +32,14 @@ export default function WidgetPage() {
     document.title = "Squidify Widget";
   }, []);
 
+  // Токен читается один раз. Окно Windows при смене ссылки меняет только #фрагмент,
+  // страница при этом не перезагружается и показывала бы старый виджет.
+  useEffect(() => {
+    const reload = () => window.location.reload();
+    window.addEventListener("hashchange", reload);
+    return () => window.removeEventListener("hashchange", reload);
+  }, []);
+
   // Сообщаем размер виджета окну Windows-приложения (оно встраивает страницу в iframe).
   useEffect(() => {
     if (!config || window.parent === window) return;
