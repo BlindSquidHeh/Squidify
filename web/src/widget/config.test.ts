@@ -159,3 +159,12 @@ describe("масштаб и прозрачность значка", () => {
     expect(doubled.height).toBe(base.height * 2);
   });
 });
+
+describe("новые настройки", () => {
+  it("ограничивает прозрачность виджета, рамку обложки и межстрочный интервал", () => {
+    const c = normalizeConfig({ size: { opacity: 0 }, cover: { borderWidth: 99 }, text: { lineHeight: 5 } });
+    expect(c.size.opacity).toBe(10);
+    expect(c.cover.borderWidth).toBe(8);
+    expect(c.text.lineHeight).toBe(90);
+  });
+});

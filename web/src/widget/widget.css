@@ -5,6 +5,7 @@
   width: var(--sw-width);
   font-family: var(--sw-font);
   letter-spacing: var(--sw-letter-spacing);
+  opacity: var(--sw-widget-opacity, 1);
   transition: opacity 400ms ease, transform 400ms ease;
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
@@ -107,7 +108,7 @@
   color: var(--sw-title-color);
   font-size: var(--sw-title-size);
   font-weight: var(--sw-title-weight);
-  line-height: 1.25;
+  line-height: var(--sw-title-line, 1.25);
 }
 
 .sw-title {
@@ -150,6 +151,8 @@
   height: var(--sw-cover-size);
   border-radius: var(--sw-cover-radius);
   box-shadow: var(--sw-cover-shadow);
+  border: var(--sw-cover-border, none);
+  box-sizing: border-box;
   overflow: hidden;
   background: rgba(127, 127, 127, 0.2);
 }

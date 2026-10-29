@@ -107,6 +107,8 @@ export interface WidgetConfig {
     gap: number;
     /** Масштаб всего виджета в процентах. */
     scale: number;
+    /** Прозрачность всего виджета, 10..100. */
+    opacity: number;
   };
   align: {
     horizontal: Align;
@@ -121,6 +123,8 @@ export interface WidgetConfig {
     timeSize: number;
     uppercase: boolean;
     letterSpacing: number;
+    /** Межстрочный интервал названия, % от размера. */
+    lineHeight: number;
     shadow: boolean;
     italic: boolean;
     artistWeight: number;
@@ -184,6 +188,8 @@ export interface WidgetConfig {
     side: (typeof COVER_SIDES)[number];
     /** Картинка для треков без обложки (например, локальных файлов). */
     fallbackUrl: string;
+    borderWidth: number;
+    borderColor: string;
   };
   progress: {
     style: (typeof PROGRESS_STYLES)[number];
@@ -278,7 +284,7 @@ export const DEFAULT_CONFIG: WidgetConfig = {
     remaining: true,
     spotifyLink: false,
   },
-  size: { width: 420, height: 0, padding: 14, gap: 14, scale: 100 },
+  size: { width: 420, height: 0, padding: 14, gap: 14, scale: 100, opacity: 100 },
   align: { horizontal: "start", vertical: "center" },
   text: {
     font: "inter",
@@ -289,6 +295,7 @@ export const DEFAULT_CONFIG: WidgetConfig = {
     timeSize: 11,
     uppercase: false,
     letterSpacing: 0,
+    lineHeight: 125,
     shadow: false,
     italic: false,
     artistWeight: 500,
@@ -304,7 +311,7 @@ export const DEFAULT_CONFIG: WidgetConfig = {
   background: { type: "solid", color: "#121212", color2: "#1db954", angle: 135, opacity: 88, blur: 0, animated: false, animationSeconds: 12 },
   border: { radius: 16, width: 0, color: "#ffffff", style: "solid", effect: "none", effectColor: "#ff3cac" },
   shadow: { enabled: true, color: "#000000", blur: 24, offsetY: 8, opacity: 40 },
-  cover: { size: 72, radius: 4, shadow: true, side: "start", fallbackUrl: "" },
+  cover: { size: 72, radius: 4, shadow: true, side: "start", fallbackUrl: "", borderWidth: 0, borderColor: "#ffffff" },
   progress: {
     style: "bar",
     height: 4,
@@ -454,6 +461,7 @@ export function normalizeConfig(input: unknown): WidgetConfig {
       padding: num(size.padding, 0, 80, d.size.padding),
       gap: num(size.gap, 0, 64, d.size.gap),
       scale: num(size.scale, 25, 400, d.size.scale),
+      opacity: num(size.opacity, 10, 100, d.size.opacity),
     },
     align: {
       horizontal: oneOf(align.horizontal, ALIGNS, d.align.horizontal),
@@ -468,6 +476,7 @@ export function normalizeConfig(input: unknown): WidgetConfig {
       timeSize: num(t.timeSize, 8, 48, d.text.timeSize),
       uppercase: bool(t.uppercase, d.text.uppercase),
       letterSpacing: num(t.letterSpacing, -5, 20, d.text.letterSpacing),
+      lineHeight: num(t.lineHeight, 90, 200, d.text.lineHeight),
       shadow: bool(t.shadow, d.text.shadow),
       italic: bool(t.italic, d.text.italic),
       artistWeight: num(t.artistWeight, 300, 900, d.text.artistWeight),
@@ -522,6 +531,8 @@ export function normalizeConfig(input: unknown): WidgetConfig {
       shadow: bool(cover.shadow, d.cover.shadow),
       side: oneOf(cover.side, COVER_SIDES, d.cover.side),
       fallbackUrl: imageUrl(cover.fallbackUrl),
+      borderWidth: num(cover.borderWidth, 0, 8, d.cover.borderWidth),
+      borderColor: color(cover.borderColor, d.cover.borderColor),
     },
     progress: {
       style: oneOf(pr.style, PROGRESS_STYLES, d.progress.style),
