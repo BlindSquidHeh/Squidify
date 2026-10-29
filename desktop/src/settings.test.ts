@@ -59,3 +59,13 @@ describe("isValidHotkey", () => {
     expect(isValidHotkey(42)).toBe(false);
   });
 });
+
+describe("настройки окна у каждого виджета", () => {
+  it("старые общие флаги переходят в каждый виджет", () => {
+    const s = sanitizeSettings({ locked: true, alwaysOnTop: false, widgets: [{ id: "aaaa" }, { id: "bbbb", locked: false }] });
+    expect(s.widgets.map((w) => [w.locked, w.alwaysOnTop])).toEqual([
+      [true, false],
+      [false, false],
+    ]);
+  });
+});

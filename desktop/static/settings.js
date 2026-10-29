@@ -6,7 +6,7 @@
   var $ = function (id) {
     return document.getElementById(id);
   };
-  var toggles = ["alwaysOnTop", "locked", "clickThrough", "autoSize", "openAtLogin"];
+  var toggles = ["openAtLogin"];
   var pendingHotkey = null;
   var cards = {};
 
@@ -58,6 +58,38 @@
     });
     var width = el("input", { type: "number", min: 80, max: 3840 });
     var height = el("input", { type: "number", min: 40, max: 2160 });
+    var keepRatio = el("input", { type: "checkbox", checked: true });
+    function flag(key, text) {
+      var box = el("input", { type: "checkbox" });
+      box.addEventListener("change", function () {
+        var patch = {};
+        patch[key] = box.checked;
+        save(patch, "");
+      });
+      return { box: box, node: el("label", { class: "toggle" }, [box, el("span", { text: " " + text })]) };
+    }
+    var topFlag = flag("alwaysOnTop", "Поверх всех окон");
+    var lockFlag = flag("locked", "Зафиксировать положение и размер");
+    var clickFlag = flag("clickThrough", "Пропускать клики сквозь виджет (когда зафиксирован)");
+    var autoFlag = flag("autoSize", "Размер окна подбирается сам");
+    // Размер применяется сразу, как только поле изменено; с галочкой пропорции второе поле считается само.
+    function applySize(changed) {
+      var w = Number(width.value);
+      var h = Number(height.value);
+      var ratio = card.ratio;
+      if (keepRatio.checked && ratio) {
+        if (changed === "w" && w > 0) h = Math.round(w / ratio);
+        if (changed === "h" && h > 0) w = Math.round(h * ratio);
+      }
+      if (!(w > 0 && h > 0)) return;
+      save({ width: w, height: h, autoSize: false }, "");
+    }
+    width.addEventListener("change", function () {
+      applySize("w");
+    });
+    height.addEventListener("change", function () {
+      applySize("h");
+    });
     var visibleBtn = button("Скрыть", "", function () {
       api.action("toggle", id).then(render);
     });
@@ -85,6 +117,7 @@
       save({ name: name.value });
     });
 
+    var card = { ratio: 0 };
     var node = el("div", { class: "widget-card" }, [
       el("div", { class: "row" }, [name, removeBtn]),
       el("div", { class: "row" }, [url, showUrl]),
@@ -104,21 +137,20 @@
       el("div", { class: "row size" }, [
         el("label", { text: "Ширина " }, [width]),
         el("label", { text: "Высота " }, [height]),
-        button("Применить размер", "", function () {
-          var w = Number(width.value);
-          var h = Number(height.value);
-          if (!(w > 0 && h > 0)) return;
-          api.update({ autoSize: false }).then(function () {
-            save({ width: w, height: h }, "Размер применён. Автоподгонка выключена.");
-          });
-        }),
+        el("label", { class: "toggle" }, [keepRatio, el("span", { text: " Сохранять пропорции" })]),
         button("Подогнать под виджет", "", function () {
           api.action("fit-window", id);
         }),
       ]),
+      el("div", { class: "flags" }, [topFlag.node, lockFlag.node, clickFlag.node, autoFlag.node]),
       msg,
     ]);
-    return { node: node, placement: placement, name: name, url: url, width: width, height: height, visibleBtn: visibleBtn, removeBtn: removeBtn };
+    card.node = node;
+    card.top = topFlag.box;
+    card.lock = lockFlag.box;
+    card.click = clickFlag.box;
+    card.auto = autoFlag.box;
+    return { node: node, state: card, top: topFlag.box, lock: lockFlag.box, click: clickFlag.box, auto: autoFlag.box, placement: placement, name: name, url: url, width: width, height: height, visibleBtn: visibleBtn, removeBtn: removeBtn };
   }
 
   function renderWidgets(s) {
@@ -145,7 +177,13 @@
       if (w.windowSize) {
         sync(card.width, w.windowSize[0]);
         sync(card.height, w.windowSize[1]);
+        card.state.ratio = w.windowSize[0] / w.windowSize[1];
       }
+      card.top.checked = Boolean(w.alwaysOnTop);
+      card.lock.checked = Boolean(w.locked);
+      card.click.checked = Boolean(w.clickThrough);
+      card.click.disabled = !w.locked;
+      card.auto.checked = Boolean(w.autoSize);
       card.visibleBtn.textContent = w.visible ? "Скрыть" : "Показать";
       card.visibleBtn.disabled = !w.url;
       card.removeBtn.disabled = s.widgets.length <= 1;
@@ -158,7 +196,6 @@
     toggles.forEach(function (key) {
       $(key).checked = Boolean(s[key]);
     });
-    $("clickThrough").disabled = !s.locked;
     if (pendingHotkey === null) $("hotkey").value = s.hotkey;
     message("hotkey-message", s.hotkeyError || "", false);
   }

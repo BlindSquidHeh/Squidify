@@ -23,7 +23,7 @@
         <h2>Виджеты на рабочем столе</h2>
         <p class="muted">
           Скопируйте ссылку виджета на сайте Squidify («Мои виджеты» → «Копировать») и вставьте в карточку. Можно
-          добавить несколько разных виджетов: у каждого своё окно, свой размер и положение. Дизайн настраивается на
+          добавить несколько разных виджетов: у каждого своё окно, свой размер, положение и настройки. Дизайн настраивается на
           сайте и обновляется в окне автоматически.
         </p>
         <div id="widgets"></div>
@@ -35,20 +35,8 @@
       </section>
 
       <section>
-        <h2>Окна</h2>
-        <p class="muted small">Настройки ниже действуют на все виджеты сразу.</p>
-        <label class="toggle"><input type="checkbox" id="alwaysOnTop" /> <span>Поверх всех окон</span></label>
-        <label class="toggle"><input type="checkbox" id="locked" /> <span>Зафиксировать положение и размер</span></label>
-        <label class="toggle"
-          ><input type="checkbox" id="clickThrough" /> <span>Пропускать клики сквозь виджеты (когда зафиксированы)</span></label
-        >
-        <label class="toggle"
-          ><input type="checkbox" id="autoSize" /> <span>Всегда подгонять окна под виджеты (отключается, если менять размер вручную)</span></label
-        >
+        <h2>Приложение</h2>
         <label class="toggle"><input type="checkbox" id="openAtLogin" /> <span>Запускать вместе с Windows</span></label>
-        <p class="muted small">
-          Виджет масштабируется вместе с окном и не обрезается. Размер меняется мышью: потяните за правый нижний уголок.
-        </p>
         <p id="url-message" class="message" role="status"></p>
       </section>
 
