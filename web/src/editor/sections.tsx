@@ -136,6 +136,15 @@ export function EditorSections({ tab, config: c, onChange }: Props) {
             options={LAYOUTS.map((l) => ({ value: l, label: LAYOUT_LABELS[l] }))}
             onChange={(v) => onChange({ ...c, layout: v })}
           />
+          <Slider
+            label="Масштаб всего виджета"
+            value={c.size.scale}
+            min={25}
+            max={400}
+            unit="%"
+            onChange={(v) => set("size", "scale", v)}
+            hint="Увеличивает или уменьшает виджет целиком: текст, обложку, отступы. Размер окна в OBS и в приложении подстроится сам."
+          />
           <Slider label="Ширина" value={c.size.width} min={120} max={1200} onChange={(v) => set("size", "width", v)} />
           <Toggle
             label="Высота по содержимому"
@@ -742,6 +751,14 @@ export function EditorSections({ tab, config: c, onChange }: Props) {
               { value: "black", label: "Чёрный" },
             ]}
             onChange={(v) => set("attribution", "variant", v)}
+          />
+          <Slider
+            label="Прозрачность значка"
+            value={c.attribution.opacity}
+            min={10}
+            max={100}
+            unit="%"
+            onChange={(v) => set("attribution", "opacity", v)}
           />
           <Slider label="Размер значка" value={c.attribution.size} min={21} max={48} onChange={(v) => set("attribution", "size", v)} />
           <Toggle

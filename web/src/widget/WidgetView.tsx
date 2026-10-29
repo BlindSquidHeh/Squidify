@@ -249,7 +249,7 @@ export function WidgetView({ config: c, playback, receivedAt, lastItem, preview 
   const iconColor = attributionColor(c);
   const position = attributionPosition(c, showCover);
   const corner = position !== "inline";
-  const attribution = <SpotifyIcon size={c.attribution.size} color={iconColor} />;
+  const attribution = <SpotifyIcon size={c.attribution.size} color={iconColor} opacity={c.attribution.opacity / 100} />;
 
   let body: ReactNode;
   if (message && !item) {

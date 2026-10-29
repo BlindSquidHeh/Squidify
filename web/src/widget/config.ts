@@ -105,6 +105,8 @@ export interface WidgetConfig {
     height: number;
     padding: number;
     gap: number;
+    /** Масштаб всего виджета в процентах. */
+    scale: number;
   };
   align: {
     horizontal: Align;
@@ -242,6 +244,8 @@ export interface WidgetConfig {
     position: (typeof ATTRIBUTION_POSITIONS)[number];
     variant: (typeof ATTRIBUTION_VARIANTS)[number];
     size: number;
+    /** Прозрачность значка Spotify, %. */
+    opacity: number;
   };
 }
 
@@ -274,7 +278,7 @@ export const DEFAULT_CONFIG: WidgetConfig = {
     remaining: true,
     spotifyLink: false,
   },
-  size: { width: 420, height: 0, padding: 14, gap: 14 },
+  size: { width: 420, height: 0, padding: 14, gap: 14, scale: 100 },
   align: { horizontal: "start", vertical: "center" },
   text: {
     font: "inter",
@@ -333,7 +337,7 @@ export const DEFAULT_CONFIG: WidgetConfig = {
   },
   decorations: [DEFAULT_DECORATION, DEFAULT_DECORATION],
   link: { text: "LISTEN ON SPOTIFY", color: "#000000", background: "#1db954" },
-  attribution: { position: "top-right", variant: "auto", size: 21 },
+  attribution: { position: "top-right", variant: "auto", size: 21, opacity: 100 },
 };
 
 // ---------------------------------------------------------------------------
@@ -449,6 +453,7 @@ export function normalizeConfig(input: unknown): WidgetConfig {
       height: num(size.height, 0, 1080, d.size.height),
       padding: num(size.padding, 0, 80, d.size.padding),
       gap: num(size.gap, 0, 64, d.size.gap),
+      scale: num(size.scale, 25, 400, d.size.scale),
     },
     align: {
       horizontal: oneOf(align.horizontal, ALIGNS, d.align.horizontal),
@@ -572,6 +577,7 @@ export function normalizeConfig(input: unknown): WidgetConfig {
       variant: oneOf(at.variant, ATTRIBUTION_VARIANTS, d.attribution.variant),
       // Минимальный размер значка Spotify по правилам бренда: 21px.
       size: num(at.size, 21, 48, d.attribution.size),
+      opacity: num(at.opacity, 10, 100, d.attribution.opacity),
     },
   };
 }
@@ -603,8 +609,15 @@ export function googleFontUrl(font: FontId | "same"): string | null {
   return `https://fonts.googleapis.com/css2?family=${def.google}&display=swap`;
 }
 
-/** Рекомендуемый размер Browser Source в OBS. */
+/** Размер Browser Source в OBS с учётом масштаба. */
 export function suggestedSourceSize(config: WidgetConfig): { width: number; height: number } {
+  const natural = naturalSourceSize(config);
+  const k = config.size.scale / 100;
+  return { width: Math.round(natural.width * k), height: Math.round(natural.height * k) };
+}
+
+/** Размер виджета в масштабе 100%. */
+export function naturalSourceSize(config: WidgetConfig): { width: number; height: number } {
   const shadowSpace = config.shadow.enabled ? config.shadow.blur + Math.abs(config.shadow.offsetY) : 0;
   const pad = Math.ceil(shadowSpace) + 8;
   const estimatedHeight = config.size.height || estimateHeight(config);

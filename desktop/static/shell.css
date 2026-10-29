@@ -22,7 +22,6 @@ body {
 #drag {
   position: absolute;
   inset: 0;
-  -webkit-app-region: drag;
   cursor: move;
   border-radius: 6px;
   transition: box-shadow 150ms;
@@ -39,7 +38,6 @@ body.unlocked:hover #drag {
   width: 16px;
   height: 16px;
   cursor: nwse-resize;
-  -webkit-app-region: no-drag;
   opacity: 0;
   transition: opacity 150ms;
   background:

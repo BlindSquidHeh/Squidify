@@ -439,6 +439,36 @@ function registerIpc() {
     resizeWidget(s.width, s.height);
   });
 
+  // Перетаскивание окна делаем сами: -webkit-app-region ненадёжно работает после смены размера.
+  let dragStart: Electron.Rectangle | null = null;
+  ipcMain.on("shell:move-start", (event) => {
+    if (!isTrustedSender(event, widgetWindow, SHELL_URL) || settings.locked || !widgetWindow) return;
+    dragStart = widgetWindow.getBounds();
+  });
+  ipcMain.on("shell:move", (event, delta: unknown) => {
+    if (!isTrustedSender(event, widgetWindow, SHELL_URL) || settings.locked || !widgetWindow || !dragStart) return;
+    const d = delta as { dx?: unknown; dy?: unknown };
+    if (typeof d?.dx !== "number" || typeof d?.dy !== "number") return;
+    // Размер задаём явно: при дробном масштабе Windows setPosition может его сдвигать.
+    widgetWindow.setBounds({
+      x: Math.round(dragStart.x + d.dx),
+      y: Math.round(dragStart.y + d.dy),
+      width: dragStart.width,
+      height: dragStart.height,
+    });
+  });
+  ipcMain.on("shell:move-end", (event) => {
+    if (isTrustedSender(event, widgetWindow, SHELL_URL)) dragStart = null;
+  });
+
+  // Разовая подгонка окна под виджет по просьбе пользователя, без включения автоподбора.
+  ipcMain.on("shell:fit-size", (event, size: unknown) => {
+    if (!isTrustedSender(event, widgetWindow, SHELL_URL) || settings.locked) return;
+    const s = size as { width?: unknown; height?: unknown };
+    if (typeof s?.width !== "number" || typeof s?.height !== "number") return;
+    resizeWidget(s.width, s.height);
+  });
+
   ipcMain.on("shell:ready", (event) => {
     if (isTrustedSender(event, widgetWindow, SHELL_URL)) sendShellState();
   });
@@ -483,6 +513,9 @@ function registerIpc() {
         break;
       case "reload":
         widgetWindow?.webContents.send("shell:reload");
+        break;
+      case "fit-window":
+        widgetWindow?.webContents.send("shell:fit");
         break;
       case "open-site": {
         const widget = currentWidget();

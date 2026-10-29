@@ -17,9 +17,10 @@ export function ScaledWidget({
   maxHeight: number;
 }) {
   const size = suggestedSourceSize(config);
-  const scale = Math.min(1, maxWidth / size.width, maxHeight / size.height);
+  const fit = Math.min(1, maxWidth / size.width, maxHeight / size.height);
+  const scale = fit * (config.size.scale / 100);
   return (
-    <div style={{ width: size.width * scale, height: size.height * scale, position: "relative" }}>
+    <div style={{ width: size.width * fit, height: size.height * fit, position: "relative" }}>
       <div
         style={{
           position: "absolute",

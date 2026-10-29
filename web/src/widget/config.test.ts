@@ -144,3 +144,18 @@ describe("новые настройки", () => {
     for (const p of BUILT_IN_PRESETS) expect(normalizeConfig(p.config)).toEqual(p.config);
   });
 });
+
+describe("масштаб и прозрачность значка", () => {
+  it("ограничивает масштаб и прозрачность значка Spotify", () => {
+    const c = normalizeConfig({ size: { scale: 9999 }, attribution: { opacity: -5 } });
+    expect(c.size.scale).toBe(400);
+    expect(c.attribution.opacity).toBe(10);
+  });
+
+  it("масштабирует рекомендуемый размер источника", () => {
+    const base = suggestedSourceSize(normalizeConfig({}));
+    const doubled = suggestedSourceSize(normalizeConfig({ size: { scale: 200 } }));
+    expect(doubled.width).toBe(base.width * 2);
+    expect(doubled.height).toBe(base.height * 2);
+  });
+});
