@@ -147,14 +147,56 @@
 .sw-cover {
   flex: none;
   display: block;
+  position: relative;
   width: var(--sw-cover-size);
   height: var(--sw-cover-size);
+}
+
+.sw-cover-art {
+  display: block;
+  width: 100%;
+  height: 100%;
   border-radius: var(--sw-cover-radius);
   box-shadow: var(--sw-cover-shadow);
   border: var(--sw-cover-border, none);
   box-sizing: border-box;
   overflow: hidden;
   background: rgba(127, 127, 127, 0.2);
+}
+
+/* Прогресс по периметру обложки */
+.sw-cover-ringed {
+  margin: var(--sw-ring-off);
+}
+
+.sw-cover-ring {
+  position: absolute;
+  left: calc(var(--sw-ring-off) * -1);
+  top: calc(var(--sw-ring-off) * -1);
+  width: calc(100% + var(--sw-ring-off) * 2);
+  height: calc(100% + var(--sw-ring-off) * 2);
+  overflow: visible;
+  pointer-events: none;
+}
+
+.sw-cover-ring rect {
+  x: calc(var(--sw-ring-w) / 2);
+  y: calc(var(--sw-ring-w) / 2);
+  width: calc(100% - var(--sw-ring-w));
+  height: calc(100% - var(--sw-ring-w));
+  rx: calc(var(--sw-cover-radius) + var(--sw-ring-off) - var(--sw-ring-w) / 2);
+  fill: none;
+  stroke-width: var(--sw-ring-w);
+  stroke-linecap: round;
+}
+
+.sw-ring-track {
+  stroke: var(--sw-ring-track);
+}
+
+.sw-ring-fill {
+  stroke: var(--sw-progress-glow);
+  transition: stroke-dasharray 250ms linear;
 }
 
 .sw-cover img {
@@ -169,7 +211,7 @@
   height: 100%;
   display: grid;
   place-items: center;
-  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
   color: rgba(255, 255, 255, 0.45);
 }
 
@@ -666,13 +708,33 @@
 }
 
 .sw-border-pulse .sw-card {
-  animation: sw-border-pulse 2.4s ease-in-out infinite;
+  animation: sw-border-pulse var(--sw-bfx-duration) ease-in-out infinite;
+}
+
+.sw-border-wave .sw-card {
+  animation: sw-border-wave var(--sw-bfx-duration) ease-out infinite;
+}
+
+.sw-border-blink .sw-card {
+  animation: sw-border-blink var(--sw-bfx-duration) steps(1, end) infinite;
 }
 
 .sw-bg-animated.sw-border-pulse .sw-card {
   animation:
     sw-bg-shift var(--sw-bg-seconds) ease-in-out infinite,
-    sw-border-pulse 2.4s ease-in-out infinite;
+    sw-border-pulse var(--sw-bfx-duration) ease-in-out infinite;
+}
+
+.sw-bg-animated.sw-border-wave .sw-card {
+  animation:
+    sw-bg-shift var(--sw-bg-seconds) ease-in-out infinite,
+    sw-border-wave var(--sw-bfx-duration) ease-out infinite;
+}
+
+.sw-bg-animated.sw-border-blink .sw-card {
+  animation:
+    sw-bg-shift var(--sw-bg-seconds) ease-in-out infinite,
+    sw-border-blink var(--sw-bfx-duration) steps(1, end) infinite;
 }
 
 @keyframes sw-border-pulse {
@@ -681,7 +743,28 @@
     box-shadow: var(--sw-shadow), 0 0 0 0 transparent;
   }
   50% {
-    box-shadow: var(--sw-shadow), 0 0 18px 2px var(--sw-border-fx);
+    box-shadow: var(--sw-shadow), 0 0 var(--sw-bfx-size) calc(var(--sw-bfx-size) / 9) var(--sw-border-fx-soft);
+  }
+}
+
+/* Круги расходятся от рамки наружу и гаснут. */
+@keyframes sw-border-wave {
+  0% {
+    box-shadow: var(--sw-shadow), 0 0 0 0 var(--sw-border-fx-soft);
+  }
+  100% {
+    box-shadow: var(--sw-shadow), 0 0 0 var(--sw-bfx-size) transparent;
+  }
+}
+
+@keyframes sw-border-blink {
+  0%,
+  49.99% {
+    box-shadow: var(--sw-shadow), 0 0 var(--sw-bfx-size) calc(var(--sw-bfx-size) / 6) var(--sw-border-fx-soft);
+  }
+  50%,
+  100% {
+    box-shadow: var(--sw-shadow), 0 0 0 0 transparent;
   }
 }
 
@@ -710,7 +793,7 @@
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
   mask-composite: exclude;
-  animation: sw-angle 4s linear infinite;
+  animation: sw-angle var(--sw-bfx-rainbow) linear infinite;
   pointer-events: none;
   z-index: 3;
 }

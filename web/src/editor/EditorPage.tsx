@@ -46,6 +46,7 @@ export default function EditorPage() {
   const [sourceChoice, setSource] = useState<"demo" | "live" | null>(null);
   const [stage, setStage] = useState<"checker" | "dark" | "light" | "game">("game");
   const [zoom, setZoom] = useState(100);
+  const [previewLocal, setPreviewLocal] = useState(false);
   const dirty = useRef<{ config?: WidgetConfig; name?: string }>({});
   const timer = useRef<number | undefined>(undefined);
 
@@ -149,7 +150,10 @@ export default function EditorPage() {
   if (loadError) return <div className="alert error">{loadError}</div>;
   if (!widget) return <div className="muted">Загрузка…</div>;
 
-  const playback = source === "live" && canLive ? live.playback : demo.playback;
+  const basePlayback = source === "live" && canLive ? live.playback : demo.playback;
+  // Предпросмотр трека без обложки, как у локальных файлов.
+  const playback =
+    previewLocal && basePlayback?.item ? { ...basePlayback, item: { ...basePlayback.item, coverUrl: null } } : basePlayback;
   const receivedAt = source === "live" && canLive ? live.receivedAt : demo.receivedAt;
   const link = widgetLink({ ...widget, config: cfg });
   const size = suggestedSourceSize(cfg);
@@ -294,7 +298,13 @@ export default function EditorPage() {
                 </button>
               </>
             ) : (
-              <EditorSections tab={tab} config={cfg} onChange={applyConfig} />
+              <EditorSections
+                tab={tab}
+                config={cfg}
+                onChange={applyConfig}
+                previewLocal={previewLocal}
+                onPreviewLocal={setPreviewLocal}
+              />
             )}
           </div>
         </div>
