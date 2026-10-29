@@ -223,6 +223,11 @@
   $("toggle-visible").addEventListener("click", function () {
     api.action("toggle").then(render);
   });
+  $("diagnostics").addEventListener("click", function () {
+    api.diagnostics().then(function () {
+      message("url-message", "Скопировано. Вставьте в чат с помощью Ctrl+V.", true);
+    });
+  });
   $("quit").addEventListener("click", function () {
     api.action("quit");
   });
