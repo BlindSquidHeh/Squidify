@@ -564,7 +564,13 @@ function rebuildTrayMenu() {
   tray.setContextMenu(Menu.buildFromTemplate(template));
 }
 
-function reloadWidgets(id?: string) {
+/** Страница виджета обновляется на сайте, поэтому старую копию из HTTP-кэша держать нельзя. */
+function clearWidgetCache(): Promise<void> {
+  return session.fromPartition(WIDGET_PARTITION).clearCache().catch(() => undefined);
+}
+
+async function reloadWidgets(id?: string) {
+  await clearWidgetCache();
   for (const [wid, win] of windows) {
     if (!win.isDestroyed() && (typeof id !== "string" || wid === id)) win.webContents.send("shell:reload");
   }
@@ -727,24 +733,27 @@ function registerIpc() {
 // Запуск
 // ---------------------------------------------------------------------------
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   settings = loadSettings();
   Menu.setApplicationMenu(null);
   hardenSession();
   registerIpc();
+  // Без этого после обновления сайта окно могло показывать старую версию страницы до 10 минут.
+  await clearWidgetCache();
   for (const entry of settings.widgets) createWidgetWindow(entry);
   createTray();
   registerHotkey();
   rebuildTrayMenu();
 
-  // Окна «поверх всех» Windows иногда опускает под соседнее окно, особенно после клика сквозь виджет.
-  // moveTop не забирает фокус, поэтому можно безопасно поднимать окна раз в пару секунд.
+  // Окна «поверх всех» Windows иногда опускает под соседнее окно (панель задач, другое окно «поверх»).
+  // moveTop не забирает фокус и для окна, которое уже наверху, ничего не меняет, поэтому его можно
+  // вызывать часто: так виджет возвращается почти мгновенно, а не мигает раз в пару секунд.
   setInterval(() => {
     if (!settings.alwaysOnTop) return;
     for (const win of windows.values()) {
       if (!win.isDestroyed() && win.isVisible()) win.moveTop();
     }
-  }, 2000);
+  }, 250);
 
   // После сна связь могла пропасть — обновляем страницы виджетов.
   powerMonitor.on("resume", () => reloadWidgets());
