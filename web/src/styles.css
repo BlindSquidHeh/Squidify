@@ -1,16 +1,18 @@
 :root {
-  /* Палитра выведена из одного тёплого «чернильного» оттенка: серые не нейтральные, а в тон ему. */
-  --bg: #15110e;
-  --bg-2: #1b1612;
-  --panel: #211b16;
-  --panel-2: #2b241d;
-  --line: #3a3128;
-  --text: #efe7da;
-  --muted: #a89d8d;
-  --faint: #7a7064;
-  --accent: #ee6a43;
-  --accent-2: #ff8a66;
-  --accent-ink: #1d0b04;
+  /* Нейтральный графит и один тёплый акцент. Для смены палитры достаточно поменять эти переменные. */
+  --bg: #131313;
+  --bg-2: #181818;
+  --panel: #1e1e1e;
+  --panel-2: #272727;
+  --line: #343434;
+  --text: #ececec;
+  --muted: #a3a3a3;
+  --faint: #757575;
+  --accent: #f0b429;
+  --accent-2: #ffc94d;
+  --accent-ink: #1a1400;
+  --checker-a: #101010;
+  --checker-b: #181818;
   --ok: #8fc18a;
   --danger: #ff6b6b;
   --warn: #e9b44c;
@@ -211,7 +213,7 @@ kbd {
 }
 
 .btn:hover {
-  background: #342b22;
+  background: color-mix(in srgb, var(--panel-2) 80%, #fff);
   text-decoration: none;
 }
 
@@ -412,7 +414,7 @@ textarea.input {
 }
 
 .input:focus {
-  outline: 2px solid rgba(238, 106, 67, 0.5);
+  outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
   outline-offset: 1px;
   border-color: var(--accent);
 }
@@ -488,12 +490,12 @@ textarea.input {
   place-items: center;
   min-height: 250px;
   padding: 24px;
-  background-color: #100d0a;
+  background-color: var(--checker-a);
   background-image:
-    linear-gradient(45deg, #17120e 25%, transparent 25%),
-    linear-gradient(-45deg, #17120e 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #17120e 75%),
-    linear-gradient(-45deg, transparent 75%, #17120e 75%);
+    linear-gradient(45deg, var(--checker-b) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--checker-b) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checker-b) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--checker-b) 75%);
   background-size: 20px 20px;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0;
 }
@@ -601,18 +603,19 @@ textarea.input {
 
 .steps > li {
   counter-increment: step;
-  display: grid;
-  grid-template-columns: 2.4em 1fr;
-  padding: 11px 0;
+  position: relative;
+  padding: 11px 0 11px 2.6em;
   border-top: 1px solid var(--line);
 }
 
 .steps > li::before {
   content: counter(step, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 13px;
   font-family: var(--mono);
   font-size: 13px;
   color: var(--faint);
-  padding-top: 2px;
 }
 
 @media (max-width: 860px) {
@@ -643,12 +646,12 @@ textarea.input {
 }
 
 .checker {
-  background-color: #100d0a;
+  background-color: var(--checker-a);
   background-image:
-    linear-gradient(45deg, #17120e 25%, transparent 25%),
-    linear-gradient(-45deg, #17120e 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #17120e 75%),
-    linear-gradient(-45deg, transparent 75%, #17120e 75%);
+    linear-gradient(45deg, var(--checker-b) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--checker-b) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checker-b) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--checker-b) 75%);
   background-size: 20px 20px;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0;
 }
@@ -856,7 +859,7 @@ textarea.input {
 }
 
 .preview-stage.bg-dark {
-  background: #0a0806;
+  background: #080808;
 }
 
 .preview-stage.bg-light {
