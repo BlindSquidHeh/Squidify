@@ -274,6 +274,7 @@ function createWidgetWindow(entry: WidgetEntry) {
   win.webContents.on("did-frame-finish-load", (_event, isMainFrame, processId, routingId) => {
     if (isMainFrame) return;
     webFrameMain.fromId(processId, routingId)?.executeJavaScript(TRANSPARENT_FRAME_SCRIPT).catch(() => undefined);
+    refreshTransparency(win);
   });
 
   win.once("ready-to-show", () => {
@@ -308,6 +309,22 @@ function createWidgetWindow(entry: WidgetEntry) {
     windows.delete(entry.id);
     drags.delete(entry.id);
   });
+}
+
+/**
+ * После перезапуска окно, показанное до первой отрисовки страницы, в Windows нередко остаётся с серой
+ * непрозрачной подложкой, а любое изменение размера окна возвращает прозрачность. Поэтому после загрузки
+ * страницы окно один раз «встряхивается» на 1 пиксель.
+ */
+function refreshTransparency(win: BrowserWindow) {
+  for (const delay of [300, 1500]) {
+    setTimeout(() => {
+      if (win.isDestroyed() || !win.isVisible()) return;
+      const b = win.getBounds();
+      win.setBounds({ ...b, width: b.width + 1 });
+      win.setBounds(b);
+    }, delay);
+  }
 }
 
 /**
