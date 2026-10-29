@@ -14,23 +14,42 @@ export interface ShellSnapshot {
   fullscreen: boolean;
   /** Окна панелей задач на всех мониторах в физических пикселях. */
   taskbars: Rect[];
+  /** Мониторы, на которых активное окно закрывает весь экран (видео, игра, F11). */
+  fullscreenAreas: Rect[];
 }
 
-/** Строка вида `2|0,1040,1920,1080;1920,1040,3840,1080`. Всё остальное считается мусором. */
-export function parseSnapshot(line: string): ShellSnapshot | null {
-  const match = /^(\d)\|([-\d,;]*)$/.exec(line.trim());
-  if (!match) return null;
-  const state = Number(match[1]);
-  const taskbars: Rect[] = [];
-  for (const part of match[2].split(";")) {
+function parseRects(text: string): Rect[] {
+  const rects: Rect[] = [];
+  for (const part of text.split(";")) {
     if (!part) continue;
     const n = part.split(",").map(Number);
     if (n.length !== 4 || n.some((v) => !Number.isFinite(v))) continue;
     const [l, t, r, b] = n;
-    if (r > l && b > t) taskbars.push({ x: l, y: t, width: r - l, height: b - t });
+    if (r > l && b > t) rects.push({ x: l, y: t, width: r - l, height: b - t });
   }
+  return rects;
+}
+
+/** Строка вида `2|панели|полноэкранные мониторы`, прямоугольники `l,t,r,b` через `;`. Всё остальное мусор. */
+export function parseSnapshot(line: string): ShellSnapshot | null {
+  const match = /^(\d)\|([-\d,;]*)(?:\|([-\d,;]*))?$/.exec(line.trim());
+  if (!match) return null;
+  const state = Number(match[1]);
   // 2 — полноэкранная программа, 3 — полноэкранная Direct3D-игра, 4 — режим презентации.
-  return { fullscreen: state === 2 || state === 3 || state === 4, taskbars };
+  return {
+    fullscreen: state === 2 || state === 3 || state === 4,
+    taskbars: parseRects(match[2]),
+    fullscreenAreas: parseRects(match[3] ?? ""),
+  };
+}
+
+/** На этом мониторе активное окно закрывает весь экран. */
+export function isFullscreenOn(display: Rect, areas: Rect[]): boolean {
+  return areas.some((a) => {
+    const cx = a.x + a.width / 2;
+    const cy = a.y + a.height / 2;
+    return cx >= display.x && cx <= display.x + display.width && cy >= display.y && cy <= display.y + display.height;
+  });
 }
 
 /** Панель, у которой скрыта (автоскрытие) почти вся площадь, остаётся тонкой полоской. */
@@ -73,8 +92,14 @@ $ErrorActionPreference = 'SilentlyContinue'
 Add-Type -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 public static class SqW {
   [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L, T, R, B; }
+  [StructLayout(LayoutKind.Sequential)] public struct MONITORINFO { public int cbSize; public RECT rcMonitor; public RECT rcWork; public uint dwFlags; }
+  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll")] public static extern IntPtr MonitorFromWindow(IntPtr h, uint flags);
+  [DllImport("user32.dll")] public static extern bool GetMonitorInfo(IntPtr m, ref MONITORINFO info);
+  [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern int GetClassName(IntPtr h, StringBuilder text, int max);
   [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
   [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr FindWindowEx(IntPtr p, IntPtr c, string cls, string title);
   [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r);
@@ -98,7 +123,26 @@ while ($true) {
       }
     }
   }
-  [Console]::Out.WriteLine(('{0}|{1}' -f $state, ($list -join ';')))
+  # Активное окно, которое закрывает весь монитор (видео на весь экран, игра, F11), кроме рабочего стола и панели.
+  $full = @()
+  $fg = [SqW]::GetForegroundWindow()
+  if ($fg -ne [IntPtr]::Zero -and [SqW]::IsWindowVisible($fg)) {
+    $cls = New-Object System.Text.StringBuilder 256
+    [void][SqW]::GetClassName($fg, $cls, 256)
+    if (@('Progman', 'WorkerW', 'Shell_TrayWnd', 'Shell_SecondaryTrayWnd') -notcontains $cls.ToString()) {
+      $wr = New-Object SqW+RECT
+      $mon = [SqW]::MonitorFromWindow($fg, 2)
+      $mi = New-Object SqW+MONITORINFO
+      $mi.cbSize = [System.Runtime.InteropServices.Marshal]::SizeOf([type][SqW+MONITORINFO])
+      if ([SqW]::GetWindowRect($fg, [ref]$wr) -and [SqW]::GetMonitorInfo($mon, [ref]$mi)) {
+        $m = $mi.rcMonitor
+        if ($wr.L -le $m.L -and $wr.T -le $m.T -and $wr.R -ge $m.R -and $wr.B -ge $m.B) {
+          $full += ('{0},{1},{2},{3}' -f $m.L, $m.T, $m.R, $m.B)
+        }
+      }
+    }
+  }
+  [Console]::Out.WriteLine(('{0}|{1}|{2}' -f $state, ($list -join ';'), ($full -join ';')))
   [Console]::Out.Flush()
   Start-Sleep -Milliseconds 400
 }

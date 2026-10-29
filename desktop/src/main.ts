@@ -10,6 +10,7 @@
 import {
   app,
   BrowserWindow,
+  webFrameMain,
   dialog,
   globalShortcut,
   ipcMain,
@@ -43,7 +44,7 @@ import {
   type Settings,
   type WidgetEntry,
 } from "./settings";
-import { parseSnapshot, taskbarOnDisplay, WATCH_SCRIPT, type ShellSnapshot } from "./shellwatch";
+import { isFullscreenOn, parseSnapshot, taskbarOnDisplay, WATCH_SCRIPT, type ShellSnapshot } from "./shellwatch";
 import { isAllowedExternalUrl, parseProtocolUrl, parseWidgetUrl, sameOrigin, type WidgetLocation } from "./url";
 
 const PROTOCOL = "squidify";
@@ -55,6 +56,17 @@ const WIDGET_PARTITION = "persist:squidify-widget";
 
 let settings: Settings;
 /** Окна виджетов по id записи в настройках. */
+const TRANSPARENT_FRAME_SCRIPT = `(function () {
+  var d = document;
+  var root = d.documentElement;
+  root.classList.add("widget-page");
+  var meta = d.querySelector('meta[name="color-scheme"]');
+  if (meta) meta.remove();
+  var style = d.createElement("style");
+  style.textContent = "html, body, #root { color-scheme: normal !important; background: transparent !important; }";
+  (d.head || root).appendChild(style);
+})();`;
+
 const windows = new Map<string, BrowserWindow>();
 const drags = new Map<string, Rectangle>();
 let settingsWindow: BrowserWindow | null = null;
@@ -251,6 +263,13 @@ function createWidgetWindow(entry: WidgetEntry) {
   applyWindowFlags(entry.id);
   void win.loadURL(SHELL_URL);
 
+  // Серая подложка вокруг виджета появляется, если страница виджета объявила тёмную color-scheme.
+  // Страница сама это отключает, но подстраховываемся: приводим вложенную страницу к прозрачной.
+  win.webContents.on("did-frame-finish-load", (_event, isMainFrame, processId, routingId) => {
+    if (isMainFrame) return;
+    webFrameMain.fromId(processId, routingId)?.executeJavaScript(TRANSPARENT_FRAME_SCRIPT).catch(() => undefined);
+  });
+
   win.once("ready-to-show", () => {
     const current = entryOf(entry.id);
     if (current?.visible && current.url && current.placement === "desktop") win.showInactive();
@@ -386,7 +405,11 @@ function applyPlacementVisibility() {
       // Виден, пока видна панель того монитора, где стоит виджет (куда бы его ни перетащили).
       const display = screen.getDisplayMatching(win.getBounds());
       const dip = shellSnapshot.taskbars.map((r) => screen.screenToDipRect(null, r));
-      show = !shellSnapshot.fullscreen && taskbarOnDisplay(display.bounds, dip) !== null;
+      const full = shellSnapshot.fullscreenAreas.map((r) => screen.screenToDipRect(null, r));
+      show =
+        !shellSnapshot.fullscreen &&
+        !isFullscreenOn(display.bounds, full) &&
+        taskbarOnDisplay(display.bounds, dip) !== null;
     }
     if (show && !win.isVisible()) win.showInactive();
     else if (!show && win.isVisible()) win.hide();
