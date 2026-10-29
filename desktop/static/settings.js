@@ -49,6 +49,13 @@
       showUrl.textContent = hidden ? "Скрыть" : "Показать";
     });
     var msg = el("p", { class: "message", role: "status" });
+    var placement = el("select", {}, [
+      el("option", { value: "desktop", text: "На рабочем столе" }),
+      el("option", { value: "taskbar", text: "На панели задач (скрывается вместе с ней)" }),
+    ]);
+    placement.addEventListener("change", function () {
+      save({ placement: placement.value }, "Готово.");
+    });
     var width = el("input", { type: "number", min: 80, max: 3840 });
     var height = el("input", { type: "number", min: 40, max: 2160 });
     var visibleBtn = button("Скрыть", "", function () {
@@ -81,6 +88,7 @@
     var node = el("div", { class: "widget-card" }, [
       el("div", { class: "row" }, [name, removeBtn]),
       el("div", { class: "row" }, [url, showUrl]),
+      el("div", { class: "row" }, [el("label", { text: "Где показывать " }, [placement])]),
       el("div", { class: "row" }, [
         button("Сохранить ссылку", "primary", function () {
           save({ url: url.value.trim() }, "Сохранено. Виджет открыт в окне.");
@@ -110,7 +118,7 @@
       ]),
       msg,
     ]);
-    return { node: node, name: name, url: url, width: width, height: height, visibleBtn: visibleBtn, removeBtn: removeBtn };
+    return { node: node, placement: placement, name: name, url: url, width: width, height: height, visibleBtn: visibleBtn, removeBtn: removeBtn };
   }
 
   function renderWidgets(s) {
@@ -133,6 +141,7 @@
       list.appendChild(card.node); // порядок как в настройках
       sync(card.name, w.name);
       sync(card.url, w.url || "");
+      if (document.activeElement !== card.placement) card.placement.value = w.placement || "desktop";
       if (w.windowSize) {
         sync(card.width, w.windowSize[0]);
         sync(card.height, w.windowSize[1]);

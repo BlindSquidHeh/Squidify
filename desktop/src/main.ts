@@ -26,6 +26,7 @@ import {
   type Rectangle,
   type WebContents,
 } from "electron";
+import { spawn, type ChildProcess } from "node:child_process";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { loadSettings, saveSettings } from "./store";
@@ -41,6 +42,7 @@ import {
   type Settings,
   type WidgetEntry,
 } from "./settings";
+import { isOnVisibleTaskbar, parseSnapshot, WATCH_SCRIPT, type ShellSnapshot } from "./shellwatch";
 import { isAllowedExternalUrl, parseProtocolUrl, parseWidgetUrl, sameOrigin, type WidgetLocation } from "./url";
 
 const PROTOCOL = "squidify";
@@ -199,7 +201,8 @@ function initialBounds(entry: WidgetEntry): Bounds {
   if (entry.bounds) {
     return ensureVisible(
       entry.bounds,
-      screen.getAllDisplays().map((d) => d.workArea),
+      // Полная область мониторов, а не рабочая: виджет на панели задач лежит вне workArea.
+      screen.getAllDisplays().map((d) => d.bounds),
       primary,
     );
   }
@@ -249,7 +252,8 @@ function createWidgetWindow(entry: WidgetEntry) {
 
   win.once("ready-to-show", () => {
     const current = entryOf(entry.id);
-    if (current?.visible && current.url) win.showInactive();
+    if (current?.visible && current.url && current.placement === "desktop") win.showInactive();
+    applyPlacementVisibility();
   });
 
   let saveTimer: NodeJS.Timeout | undefined;
@@ -263,6 +267,8 @@ function createWidgetWindow(entry: WidgetEntry) {
   win.on("moved", persistBounds);
   win.on("resized", persistBounds);
   win.on("move", persistBounds);
+  win.on("move", applyPlacementVisibility);
+  win.on("resize", applyPlacementVisibility);
 
   win.on("close", (event) => {
     if (!quitting) {
@@ -317,16 +323,81 @@ function setVisible(id: string, visible: boolean) {
       showSettings();
       return;
     }
-    win.showInactive();
+    if (entry.placement === "desktop") win.showInactive();
   } else {
     win.hide();
   }
   updateEntry(id, { visible }, false);
+  applyPlacementVisibility();
+}
+
+// ---------------------------------------------------------------------------
+// Виджеты на панели задач: видны, только пока видна панель и нет полноэкранной программы
+// ---------------------------------------------------------------------------
+
+let shellSnapshot: ShellSnapshot | null = null;
+let watcher: ChildProcess | null = null;
+let watcherFailures = 0;
+
+function startShellWatcher() {
+  if (process.platform !== "win32" || watcher) return;
+  const encoded = Buffer.from(WATCH_SCRIPT, "utf16le").toString("base64");
+  const child = spawn(
+    "powershell.exe",
+    ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encoded],
+    { windowsHide: true, stdio: ["ignore", "pipe", "ignore"] },
+  );
+  watcher = child;
+  let buffer = "";
+  child.stdout?.setEncoding("utf8");
+  child.stdout?.on("data", (chunk: string) => {
+    buffer += chunk;
+    let index: number;
+    while ((index = buffer.indexOf("\n")) >= 0) {
+      const snapshot = parseSnapshot(buffer.slice(0, index));
+      buffer = buffer.slice(index + 1);
+      if (!snapshot) continue;
+      watcherFailures = 0;
+      shellSnapshot = snapshot;
+      applyPlacementVisibility();
+    }
+  });
+  child.on("error", () => undefined);
+  child.on("exit", () => {
+    watcher = null;
+    shellSnapshot = null;
+    applyPlacementVisibility();
+    // Несколько попыток перезапуска; если PowerShell недоступен, виджеты остаются видимыми всегда.
+    if (!quitting && ++watcherFailures <= 3) setTimeout(startShellWatcher, 5000);
+  });
+}
+
+/** Окно виджета на панели задач показывается только если панель видна и нет полноэкранной программы. */
+function applyPlacementVisibility() {
+  for (const entry of settings.widgets) {
+    if (entry.placement !== "taskbar") continue;
+    const win = windowOf(entry.id);
+    if (!win) continue;
+    const wanted = entry.visible && Boolean(entry.url);
+    let show = wanted;
+    if (wanted && shellSnapshot) {
+      const bounds = win.getBounds();
+      const dip = shellSnapshot.taskbars.map((r) => screen.screenToDipRect(null, r));
+      show = !shellSnapshot.fullscreen && isOnVisibleTaskbar(bounds, dip);
+    }
+    if (show && !win.isVisible()) win.showInactive();
+    else if (!show && win.isVisible()) win.hide();
+  }
 }
 
 /** Горячая клавиша и клик по трею: если что-то видно, прячем всё, иначе показываем всё. */
+function wantsVisible(w: WidgetEntry): boolean {
+  const win = windowOf(w.id);
+  return w.placement === "taskbar" ? w.visible && Boolean(w.url) : Boolean(win?.isVisible());
+}
+
 function toggleAll() {
-  const anyVisible = [...windows.values()].some((w) => !w.isDestroyed() && w.isVisible());
+  const anyVisible = settings.widgets.some(wantsVisible);
   const targets = settings.widgets.filter((w) => w.url);
   if (targets.length === 0) {
     showSettings();
@@ -362,6 +433,7 @@ function addWidget(location: WidgetLocation | null, name?: string): AddResult {
     url: location ? location.href : null,
     bounds: null,
     visible: true,
+    placement: "desktop",
   };
   settings = { ...settings, widgets: [...settings.widgets, entry] };
   saveSettings(settings);
@@ -422,7 +494,9 @@ function publicSettings() {
     ...settings,
     widgets: settings.widgets.map((w) => {
       const win = windowOf(w.id);
-      return { ...w, visible: win ? win.isVisible() : false, windowSize: win ? win.getSize() : null };
+      // Для виджета на панели задач «виден» — это желание пользователя: окно может быть скрыто вместе с панелью.
+      const visible = w.placement === "taskbar" ? w.visible && Boolean(w.url) : win ? win.isVisible() : false;
+      return { ...w, visible, windowSize: win ? win.getSize() : null };
     }),
     hotkeyError,
     version: app.getVersion(),
@@ -496,13 +570,13 @@ function createTray() {
 
 function rebuildTrayMenu() {
   if (!tray) return;
-  const anyVisible = [...windows.values()].some((w) => !w.isDestroyed() && w.isVisible());
+  const anyVisible = settings.widgets.some(wantsVisible);
   const widgetItems: MenuItemConstructorOptions[] =
     settings.widgets.length > 1
       ? settings.widgets.map((w) => ({
           label: w.name,
           type: "checkbox" as const,
-          checked: windowOf(w.id)?.isVisible() ?? false,
+          checked: wantsVisible(w),
           enabled: Boolean(w.url),
           click: (item) => setVisible(w.id, item.checked),
         }))
@@ -689,7 +763,15 @@ function registerIpc() {
       }
     }
     if (typeof p.name === "string" && p.name.trim()) next.name = p.name.trim().slice(0, 40);
+    if (p.placement === "desktop" || p.placement === "taskbar") next.placement = p.placement;
     updateEntry(id, next);
+    if (next.placement) {
+      // Переход с панели задач на рабочий стол возвращает окно, если оно было скрыто вместе с панелью.
+      const entry = entryOf(id);
+      const win = windowOf(id);
+      if (entry && win && next.placement === "desktop" && entry.visible && entry.url) win.showInactive();
+      applyPlacementVisibility();
+    }
     if (next.url) setVisible(id, true);
     if (typeof p.width === "number" && typeof p.height === "number") resizeWidget(id, p.width, p.height);
     return { ok: true, settings: publicSettings() };
@@ -744,6 +826,7 @@ app.whenReady().then(async () => {
   createTray();
   registerHotkey();
   rebuildTrayMenu();
+  startShellWatcher();
 
   // Окна «поверх всех» Windows иногда опускает под соседнее окно (панель задач, другое окно «поверх»).
   // moveTop не забирает фокус и для окна, которое уже наверху, ничего не меняет, поэтому его можно
@@ -753,7 +836,7 @@ app.whenReady().then(async () => {
     for (const win of windows.values()) {
       if (!win.isDestroyed() && win.isVisible()) win.moveTop();
     }
-  }, 250);
+  }, 150);
 
   // После сна связь могла пропасть — обновляем страницы виджетов.
   powerMonitor.on("resume", () => reloadWidgets());
