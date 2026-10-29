@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isOnVisibleTaskbar, parseSnapshot } from "./shellwatch";
+import { isOnVisibleTaskbar, parseSnapshot, taskbarOnDisplay } from "./shellwatch";
 
 describe("parseSnapshot", () => {
   it("разбирает состояние и панели задач", () => {
@@ -36,5 +36,19 @@ describe("isOnVisibleTaskbar", () => {
   it("скрытая (автоскрытие) панель в виде полоски не считается", () => {
     const strip = { x: 0, y: 1078, width: 1920, height: 2 };
     expect(isOnVisibleTaskbar({ x: 1500, y: 1070, width: 200, height: 20 }, [strip])).toBe(false);
+  });
+});
+
+describe("taskbarOnDisplay", () => {
+  const second = { x: 1920, y: 0, width: 1920, height: 1080 };
+  const bars = [
+    { x: 0, y: 1040, width: 1920, height: 40 },
+    { x: 1920, y: 1040, width: 1920, height: 40 },
+  ];
+  it("находит панель нужного монитора", () => {
+    expect(taskbarOnDisplay(second, bars)).toBe(bars[1]);
+  });
+  it("нет панели, если она спрятана", () => {
+    expect(taskbarOnDisplay(second, [bars[0], { x: 1920, y: 1078, width: 1920, height: 2 }])).toBeNull();
   });
 });

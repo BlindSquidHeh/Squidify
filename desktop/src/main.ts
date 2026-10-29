@@ -42,7 +42,7 @@ import {
   type Settings,
   type WidgetEntry,
 } from "./settings";
-import { isOnVisibleTaskbar, parseSnapshot, WATCH_SCRIPT, type ShellSnapshot } from "./shellwatch";
+import { parseSnapshot, taskbarOnDisplay, WATCH_SCRIPT, type ShellSnapshot } from "./shellwatch";
 import { isAllowedExternalUrl, parseProtocolUrl, parseWidgetUrl, sameOrigin, type WidgetLocation } from "./url";
 
 const PROTOCOL = "squidify";
@@ -381,13 +381,32 @@ function applyPlacementVisibility() {
     const wanted = entry.visible && Boolean(entry.url);
     let show = wanted;
     if (wanted && shellSnapshot) {
-      const bounds = win.getBounds();
+      // Виден, пока видна панель того монитора, где стоит виджет (куда бы его ни перетащили).
+      const display = screen.getDisplayMatching(win.getBounds());
       const dip = shellSnapshot.taskbars.map((r) => screen.screenToDipRect(null, r));
-      show = !shellSnapshot.fullscreen && isOnVisibleTaskbar(bounds, dip);
+      show = !shellSnapshot.fullscreen && taskbarOnDisplay(display.bounds, dip) !== null;
     }
     if (show && !win.isVisible()) win.showInactive();
     else if (!show && win.isVisible()) win.hide();
   }
+}
+
+/** При выборе «На панели задач» ставит окно на панель его монитора (слева от значков трея). */
+function snapToTaskbar(win: BrowserWindow) {
+  if (!shellSnapshot) return;
+  const b = win.getBounds();
+  const display = screen.getDisplayMatching(b);
+  const dip = shellSnapshot.taskbars.map((r) => screen.screenToDipRect(null, r));
+  const bar = taskbarOnDisplay(display.bounds, dip);
+  if (!bar) return;
+  const horizontal = bar.width >= bar.height;
+  const x = horizontal
+    ? Math.max(bar.x, bar.x + bar.width - b.width - 260)
+    : bar.x + Math.round((bar.width - b.width) / 2);
+  const y = horizontal
+    ? bar.y + Math.round((bar.height - b.height) / 2)
+    : Math.max(bar.y, bar.y + bar.height - b.height - 160);
+  win.setBounds({ x, y, width: b.width, height: b.height });
 }
 
 /** Горячая клавиша и клик по трею: если что-то видно, прячем всё, иначе показываем всё. */
@@ -770,6 +789,7 @@ function registerIpc() {
       const entry = entryOf(id);
       const win = windowOf(id);
       if (entry && win && next.placement === "desktop" && entry.visible && entry.url) win.showInactive();
+      if (win && next.placement === "taskbar") snapToTaskbar(win);
       applyPlacementVisibility();
     }
     if (next.url) setVisible(id, true);
