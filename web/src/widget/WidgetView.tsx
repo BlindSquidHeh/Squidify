@@ -370,8 +370,16 @@ export function WidgetView({ config: c, playback, receivedAt, lastItem, preview 
       >
         {item.coverUrl ? (
           <img src={item.coverUrl} alt={item.album ?? item.title} referrerPolicy="no-referrer" draggable={false} />
+        ) : c.cover.fallbackUrl ? (
+          <img src={c.cover.fallbackUrl} alt="" referrerPolicy="no-referrer" draggable={false} />
         ) : (
-          <div className="sw-cover-empty" />
+          <div className="sw-cover-empty">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 18V5l11-2v13" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="6.5" cy="18" r="2.5" fill="currentColor" />
+              <circle cx="17.5" cy="16" r="2.5" fill="currentColor" />
+            </svg>
+          </div>
         )}
       </a>
     ) : null;

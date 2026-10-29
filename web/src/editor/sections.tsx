@@ -450,6 +450,14 @@ export function EditorSections({ tab, config: c, onChange }: Props) {
             ]}
             onChange={(v) => set("cover", "side", v)}
           />
+          <UrlInput
+            label="Картинка, если обложки нет"
+            value={c.cover.fallbackUrl}
+            onChange={(v) => set("cover", "fallbackUrl", v)}
+          />
+          <p className="muted small" style={{ margin: 0 }}>
+            Spotify не отдаёт обложки локальных файлов, поэтому для них показывается эта картинка (или значок ноты).
+          </p>
           <p className="muted small" style={{ margin: 0 }}>
             По правилам Spotify обложку нельзя обрезать, размывать, анимировать и закрывать другими элементами,
             поэтому эти эффекты недоступны. Скругление ограничено 8px.
