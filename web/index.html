@@ -6,14 +6,25 @@
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="description" content="Squidify — бесплатный настраиваемый виджет текущего трека Spotify для OBS Studio и Windows." />
     <meta name="color-scheme" content="dark" />
-    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="%BASE_URL%favicon-32.png" />
+    <link rel="icon" sizes="any" href="%BASE_URL%favicon.ico" />
+    <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" />
+    <meta name="theme-color" content="#15110e" />
     <script>
       // Страница виджета (…/w/) должна быть прозрачной с самого первого кадра.
       if (/\/w\/?$/.test(location.pathname)) document.documentElement.classList.add("widget-page");
+      else {
+        // Шрифты нужны только сайту: страница виджета в OBS должна грузиться быстро.
+        var f = document.createElement("link");
+        f.rel = "stylesheet";
+        f.href = "https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap";
+        document.head.appendChild(f);
+      }
     </script>
     <style>
       html.widget-page, html.widget-page body { background: transparent !important; margin: 0; }
-      html:not(.widget-page) body { background: #0b0b10; color: #ececf1; margin: 0; }
+      html:not(.widget-page) body { background: #15110e; color: #efe7da; margin: 0; }
     </style>
     <title>Squidify — виджет Spotify для OBS</title>
   </head>

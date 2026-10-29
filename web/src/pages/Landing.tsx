@@ -1,80 +1,124 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ScaledWidget } from "../components/ScaledWidget";
 import { useAuth } from "../lib/auth";
+import { FONTS, LAYOUTS, VISUALIZER_STYLES } from "../widget/config";
 import { BUILT_IN_PRESETS } from "../widget/presets";
 import { useDemoFeed } from "../widget/useDemoFeed";
-
-const FEATURES = [
-  ["🎨", "Полный контроль над дизайном", "Шесть макетов, шрифты, цвета, градиенты, прозрачность, тени, анимации и прокрутка длинных названий."],
-  ["⚡", "Предпросмотр в реальном времени", "Все изменения сразу видны в редакторе и автоматически применяются к уже добавленной в OBS ссылке."],
-  ["🎥", "Готово для OBS", "Прозрачная страница без лишних элементов. Скопируйте ссылку в Browser Source — и всё."],
-  ["🪟", "Окно поверх всех окон", "Приложение для Windows показывает тот же виджет в прозрачном окне, которое можно двигать мышью."],
-  ["🔒", "Безопасно", "Токены Spotify хранятся на сервере в зашифрованном виде и никогда не попадают в ссылку виджета."],
-  ["💸", "Бесплатно и открыто", "Исходный код открыт. Разверните свою копию на GitHub Pages и Supabase бесплатно."],
-];
 
 export default function Landing() {
   const { user } = useAuth();
   const demo = useDemoFeed();
-  const presets = [BUILT_IN_PRESETS[0], BUILT_IN_PRESETS[2], BUILT_IN_PRESETS[4]];
+  const [presetId, setPresetId] = useState(BUILT_IN_PRESETS[0].id);
+  const preset = BUILT_IN_PRESETS.find((p) => p.id === presetId) ?? BUILT_IN_PRESETS[0];
 
   return (
-    <div className="stack" style={{ gap: 48 }}>
+    <div className="landing">
       <section className="hero">
         <div>
-          <span className="badge ok">Бесплатно · Открытый код</span>
-          <h1 style={{ marginTop: 16 }}>Свой виджет Spotify для стрима и рабочего стола</h1>
+          <h1>Виджет «Сейчас играет» для OBS в вашем собственном стиле</h1>
           <p className="lead">
-            Покажите зрителям, что сейчас играет: обложка, трек, исполнитель и прогресс. Настройте внешний вид в
-            визуальном редакторе без кода и вставьте ссылку в OBS Studio.
+            Подключаете свой Spotify, собираете оформление в редакторе, вставляете одну ссылку в OBS. Менять дизайн
+            потом можно, не трогая саму ссылку.
           </p>
           <div className="row">
             <Link to={user ? "/app" : "/register"} className="btn primary">
               {user ? "Мои виджеты" : "Создать виджет"}
             </Link>
-            <Link to="/obs" className="btn">
-              Как добавить в OBS
+            <Link to="/obs" className="btn ghost">
+              Как вставить в OBS
             </Link>
           </div>
+          <ul className="facts">
+            <li>бесплатно, исходный код открыт</li>
+            <li>нужен Spotify Premium (требование Spotify)</li>
+            <li>окно для Windows есть, ссылка для OBS тоже</li>
+          </ul>
         </div>
-        <div className="hero-preview">
-          <div className="stack" style={{ alignItems: "center", gap: 18 }}>
-            {presets.map((p) => (
-              <ScaledWidget
-                key={p.id}
-                config={p.config}
-                playback={demo.playback}
-                receivedAt={demo.receivedAt}
-                maxWidth={440}
-                maxHeight={140}
-              />
+
+        <figure className="stage" style={{ margin: 0 }}>
+          <div className="stage-view">
+            <ScaledWidget
+              config={preset.config}
+              playback={demo.playback}
+              receivedAt={demo.receivedAt}
+              maxWidth={Math.min(460, window.innerWidth - 96)}
+              maxHeight={220}
+            />
+          </div>
+          <ul className="stage-picker" aria-label="Примеры оформления">
+            {BUILT_IN_PRESETS.map((p) => (
+              <li key={p.id}>
+                <button type="button" aria-pressed={p.id === preset.id} onClick={() => setPresetId(p.id)}>
+                  {p.name}
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
+          <figcaption className="stage-caption">
+            Это настоящий виджет, а не картинка. «{preset.name}»: {preset.description.toLowerCase()}.
+          </figcaption>
+        </figure>
+      </section>
+
+      <section className="split">
+        <div>
+          <h2>Редактор</h2>
+          <p className="muted">
+            Всё, что видно в виджете, настраивается. Изменения сразу идут в OBS, ссылку заново вставлять не нужно.
+          </p>
         </div>
+        <dl className="spec">
+          <dt>{LAYOUTS.length} макетов</dt>
+          <dd>от узкой строки в углу до крупной обложки</dd>
+          <dt>{FONTS.length - 1} шрифтов</dt>
+          <dd>для исполнителя можно взять другой, чем для названия</dd>
+          <dt>{VISUALIZER_STYLES.length} визуализаторов</dt>
+          <dd>вместо полосы прогресса, в том числе «волна трека» с закрашенной проигранной частью</dd>
+          <dt>2 картинки или GIF</dt>
+          <dd>по прямой ссылке, в любом месте карточки, можно показывать только пока трек играет</dd>
+          <dt>{BUILT_IN_PRESETS.length} пресетов</dt>
+          <dd>и свои, до 50 штук</dd>
+        </dl>
       </section>
 
-      <section className="grid three">
-        {FEATURES.map(([icon, title, text]) => (
-          <div key={title} className="card feature">
-            <h3>
-              <span aria-hidden>{icon}</span> {title}
-            </h3>
-            <p className="muted" style={{ margin: 0 }}>
-              {text}
-            </p>
-          </div>
-        ))}
-      </section>
-
-      <section className="card">
-        <h2>Как это работает</h2>
-        <ol className="steps">
-          <li>Зарегистрируйтесь на сайте — у каждого пользователя свои виджеты и настройки.</li>
+      <section className="split">
+        <div>
+          <h2>Что надо знать заранее</h2>
+          <p className="muted">Часть ограничений придумали не мы, их накладывает Spotify.</p>
+        </div>
+        <ul className="notes">
           <li>
-            Подключите Spotify через собственное приложение Spotify for Developers (это бесплатно, займёт пару минут).
+            <b>Свое приложение Spotify.</b> Spotify разрешил обычным разработчикам только 5 пользователей на
+            приложение, поэтому у каждого свой Client ID. Создаётся за пару минут, мы показываем, куда нажимать.
           </li>
-          <li>Настройте дизайн в редакторе или выберите готовый пресет.</li>
-          <li>Скопируйте ссылку в OBS Browser Source или откройте виджет в окне Windows.</li>
+          <li>
+            <b>Premium у владельца приложения.</b> Без него Spotify отвечает ошибкой 403, и виджет это подскажет.
+          </li>
+          <li>
+            <b>Обложка остаётся как есть.</b> По правилам Spotify её нельзя обрезать, размывать и анимировать,
+            поэтому скругление ограничено, а эффекты применяются к остальному.
+          </li>
+          <li>
+            <b>Визуализатор не слышит музыку.</b> Spotify не отдаёт звук трека, поэтому столбики живут своей жизнью:
+            движутся, пока трек играет, и затихают на паузе.
+          </li>
+          <li>
+            <b>Токен Spotify лежит на сервере</b> в зашифрованном виде. В ссылке для OBS его нет, ссылку можно
+            пересоздать в один клик.
+          </li>
+        </ul>
+      </section>
+
+      <section className="split">
+        <div>
+          <h2>Как начать</h2>
+        </div>
+        <ol className="steps">
+          <li>Зарегистрируйтесь, у каждого свои виджеты.</li>
+          <li>Создайте приложение на developer.spotify.com и вставьте Client ID в разделе «Spotify».</li>
+          <li>Выберите пресет и подправьте под себя.</li>
+          <li>Скопируйте ссылку в источник «Браузер» в OBS или откройте виджет в окне Windows.</li>
         </ol>
       </section>
     </div>
