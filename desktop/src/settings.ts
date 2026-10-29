@@ -29,6 +29,8 @@ export interface Settings {
   widgets: WidgetEntry[];
   hotkey: string;
   openAtLogin: boolean;
+  /** Видеокарта в окнах виджетов. Выключена: на части ПК с ней прозрачные окна становятся серыми и мигают. */
+  gpu: boolean;
 }
 
 export const MAX_WIDGETS = 12;
@@ -51,6 +53,7 @@ export const DEFAULT_SETTINGS: Settings = {
   widgets: [newWidgetEntry("main", defaultWidgetName(0), null)],
   hotkey: "CommandOrControl+Alt+S",
   openAtLogin: false,
+  gpu: false,
 };
 
 export const MIN_SIZE = { width: 80, height: 40 };
@@ -120,6 +123,7 @@ export function sanitizeSettings(input: unknown): Settings {
     widgets: sanitizeWidgets(src.widgets, src),
     hotkey: isValidHotkey(src.hotkey) ? src.hotkey : d.hotkey,
     openAtLogin: bool(src.openAtLogin, d.openAtLogin),
+    gpu: bool(src.gpu, d.gpu),
   };
 }
 

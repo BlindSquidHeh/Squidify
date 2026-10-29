@@ -79,6 +79,10 @@ let hotkeyError: string | null = null;
 // Один экземпляр приложения и протокол squidify://
 // ---------------------------------------------------------------------------
 
+// Прозрачные окна на видеокарте у части пользователей рисуются серыми и мигают, поэтому по умолчанию без неё.
+// Менять можно в настройках, действует после перезапуска.
+if (!loadSettings().gpu) app.disableHardwareAcceleration();
+
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
@@ -748,6 +752,7 @@ function registerIpc() {
     const p = (patch && typeof patch === "object" ? patch : {}) as Record<string, unknown>;
     const next: Partial<Omit<Settings, "widgets">> = {};
     if (typeof p.openAtLogin === "boolean") next.openAtLogin = p.openAtLogin;
+    if (typeof p.gpu === "boolean") next.gpu = p.gpu;
     if ("hotkey" in p) {
       if (!isValidHotkey(p.hotkey)) return { ok: false, error: "Некорректное сочетание клавиш" };
       next.hotkey = p.hotkey;
