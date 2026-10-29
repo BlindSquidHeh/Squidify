@@ -9,26 +9,41 @@ export interface Bounds {
   height: number;
 }
 
-export interface Settings {
-  widgetUrl: string | null;
+/** Одно окно виджета на рабочем столе. */
+export interface WidgetEntry {
+  id: string;
+  name: string;
+  url: string | null;
   bounds: Bounds | null;
+  visible: boolean;
+}
+
+export interface Settings {
+  widgets: WidgetEntry[];
   alwaysOnTop: boolean;
   locked: boolean;
   clickThrough: boolean;
   autoSize: boolean;
-  visible: boolean;
   hotkey: string;
   openAtLogin: boolean;
 }
 
+export const MAX_WIDGETS = 12;
+
+export function newWidgetId(): string {
+  return Math.random().toString(36).slice(2, 10).padEnd(8, "0");
+}
+
+export function defaultWidgetName(index: number): string {
+  return `Виджет ${index + 1}`;
+}
+
 export const DEFAULT_SETTINGS: Settings = {
-  widgetUrl: null,
-  bounds: null,
+  widgets: [{ id: "main", name: defaultWidgetName(0), url: null, bounds: null, visible: true }],
   alwaysOnTop: true,
   locked: false,
   clickThrough: false,
   autoSize: true,
-  visible: true,
   hotkey: "CommandOrControl+Alt+S",
   openAtLogin: false,
 };
@@ -62,18 +77,40 @@ function sanitizeBounds(value: unknown): Bounds | null {
   return { x: Math.round(b.x as number), y: Math.round(b.y as number), ...size };
 }
 
+function sanitizeWidgets(input: unknown, legacy: Record<string, unknown>): WidgetEntry[] {
+  const list: unknown[] = Array.isArray(input)
+    ? input
+    : // Настройки старой версии: один виджет в полях widgetUrl, bounds, visible.
+      [{ id: "main", url: legacy.widgetUrl, bounds: legacy.bounds, visible: legacy.visible }];
+  const seen = new Set<string>();
+  const widgets: WidgetEntry[] = [];
+  for (const raw of list.slice(0, MAX_WIDGETS)) {
+    const w = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+    const location = typeof w.url === "string" ? parseWidgetUrl(w.url) : null;
+    let id = typeof w.id === "string" && /^[a-z0-9]{4,16}$/.test(w.id) ? w.id : newWidgetId();
+    while (seen.has(id)) id = newWidgetId();
+    seen.add(id);
+    const name = typeof w.name === "string" && w.name.trim() ? w.name.trim().slice(0, 40) : defaultWidgetName(widgets.length);
+    widgets.push({
+      id,
+      name,
+      url: location ? location.href : null,
+      bounds: sanitizeBounds(w.bounds),
+      visible: bool(w.visible, true),
+    });
+  }
+  return widgets.length > 0 ? widgets : DEFAULT_SETTINGS.widgets.map((w) => ({ ...w }));
+}
+
 export function sanitizeSettings(input: unknown): Settings {
   const src = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
   const d = DEFAULT_SETTINGS;
-  const widget = typeof src.widgetUrl === "string" ? parseWidgetUrl(src.widgetUrl) : null;
   return {
-    widgetUrl: widget ? widget.href : null,
-    bounds: sanitizeBounds(src.bounds),
+    widgets: sanitizeWidgets(src.widgets, src),
     alwaysOnTop: bool(src.alwaysOnTop, d.alwaysOnTop),
     locked: bool(src.locked, d.locked),
     clickThrough: bool(src.clickThrough, d.clickThrough),
     autoSize: bool(src.autoSize, d.autoSize),
-    visible: bool(src.visible, d.visible),
     hotkey: isValidHotkey(src.hotkey) ? src.hotkey : d.hotkey,
     openAtLogin: bool(src.openAtLogin, d.openAtLogin),
   };

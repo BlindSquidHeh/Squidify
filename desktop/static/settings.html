@@ -20,51 +20,41 @@
       </header>
 
       <section>
-        <h2>Ссылка на виджет</h2>
+        <h2>Виджеты на рабочем столе</h2>
         <p class="muted">
-          Скопируйте ссылку виджета на сайте Squidify («Мои виджеты» → «Копировать») и вставьте сюда. Дизайн
-          настраивается на сайте и обновляется в окне автоматически.
+          Скопируйте ссылку виджета на сайте Squidify («Мои виджеты» → «Копировать») и вставьте в карточку. Можно
+          добавить несколько разных виджетов: у каждого своё окно, свой размер и положение. Дизайн настраивается на
+          сайте и обновляется в окне автоматически.
         </p>
+        <div id="widgets"></div>
         <div class="row">
-          <input id="url" type="password" placeholder="https://…/w/#…" spellcheck="false" autocomplete="off" />
-          <button id="toggle-url" type="button" class="ghost">Показать</button>
+          <button id="add-widget" type="button" class="primary">+ Добавить виджет</button>
+          <button id="toggle-visible" type="button">Скрыть / показать все</button>
         </div>
-        <div class="row">
-          <button id="save-url" type="button" class="primary">Сохранить</button>
-          <button id="open-site" type="button">Открыть сайт</button>
-          <button id="reload" type="button">Обновить</button>
-        </div>
+        <p id="widgets-message" class="message" role="status"></p>
+      </section>
+
+      <section>
+        <h2>Окна</h2>
+        <p class="muted small">Настройки ниже действуют на все виджеты сразу.</p>
+        <label class="toggle"><input type="checkbox" id="alwaysOnTop" /> <span>Поверх всех окон</span></label>
+        <label class="toggle"><input type="checkbox" id="locked" /> <span>Зафиксировать положение и размер</span></label>
+        <label class="toggle"
+          ><input type="checkbox" id="clickThrough" /> <span>Пропускать клики сквозь виджеты (когда зафиксированы)</span></label
+        >
+        <label class="toggle"
+          ><input type="checkbox" id="autoSize" /> <span>Всегда подгонять окна под виджеты (отключается, если менять размер вручную)</span></label
+        >
+        <label class="toggle"><input type="checkbox" id="openAtLogin" /> <span>Запускать вместе с Windows</span></label>
+        <p class="muted small">
+          Виджет масштабируется вместе с окном и не обрезается. Размер меняется мышью: потяните за правый нижний уголок.
+        </p>
         <p id="url-message" class="message" role="status"></p>
       </section>
 
       <section>
-        <h2>Окно</h2>
-        <label class="toggle"><input type="checkbox" id="alwaysOnTop" /> <span>Поверх всех окон</span></label>
-        <label class="toggle"><input type="checkbox" id="locked" /> <span>Зафиксировать положение и размер</span></label>
-        <label class="toggle"
-          ><input type="checkbox" id="clickThrough" /> <span>Пропускать клики сквозь виджет (когда зафиксирован)</span></label
-        >
-        <label class="toggle"
-          ><input type="checkbox" id="autoSize" /> <span>Всегда подгонять окно под виджет (отключается, если менять размер вручную)</span></label
-        >
-        <label class="toggle"><input type="checkbox" id="openAtLogin" /> <span>Запускать вместе с Windows</span></label>
-        <div class="row size">
-          <label>Ширина <input id="width" type="number" min="80" max="3840" /></label>
-          <label>Высота <input id="height" type="number" min="40" max="2160" /></label>
-          <button id="apply-size" type="button">Применить размер</button>
-        </div>
-        <p class="muted small">Виджет масштабируется вместе с окном и не обрезается. Размер можно менять и мышью: потяните за правый нижний уголок.</p>
-        <div class="row">
-          <button id="fit-window" type="button">Подогнать окно под виджет</button>
-        </div>
-        <div class="row">
-          <button id="toggle-visible" type="button">Скрыть / показать виджет</button>
-        </div>
-      </section>
-
-      <section>
         <h2>Горячая клавиша</h2>
-        <p class="muted">Скрывает и показывает виджет. Нажмите сочетание в поле ниже.</p>
+        <p class="muted">Скрывает и показывает все виджеты. Нажмите сочетание в поле ниже.</p>
         <div class="row">
           <input id="hotkey" readonly placeholder="Нажмите сочетание клавиш" />
           <button id="save-hotkey" type="button">Сохранить</button>
