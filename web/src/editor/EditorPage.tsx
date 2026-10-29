@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useDialogs } from "../components/dialog-context";
 import { Link, useSearchParams } from "react-router-dom";
 import { CopyField } from "../components/CopyField";
 import {
@@ -31,6 +32,7 @@ type SaveState = "saved" | "pending" | "saving" | "error";
 const SAVE_DELAY_MS = 800;
 
 export default function EditorPage() {
+  const dialogs = useDialogs();
   const [params] = useSearchParams();
   const id = params.get("id");
   const [widget, setWidget] = useState<WidgetRecord | null>(null);
@@ -153,20 +155,34 @@ export default function EditorPage() {
   const size = suggestedSourceSize(cfg);
 
   const savePreset = async () => {
-    const presetName = window.prompt("Название пресета", name);
+    const presetName = await dialogs.prompt({
+      title: "Сохранить как пресет",
+      label: "Название пресета",
+      defaultValue: name,
+      confirmLabel: "Сохранить",
+    });
     if (!presetName) return;
     try {
       const preset = await createPreset(presetName, cfg);
       setPresets((prev) => [preset, ...prev]);
     } catch (e) {
-      window.alert((e as Error).message);
+      await dialogs.alert({ title: "Не удалось сохранить пресет", message: (e as Error).message });
     }
   };
 
   const removePreset = async (preset: PresetRecord) => {
-    if (!window.confirm(`Удалить пресет «${preset.name}»?`)) return;
-    await deletePreset(preset.id).catch((e) => window.alert((e as Error).message));
-    setPresets((prev) => prev.filter((p) => p.id !== preset.id));
+    const ok = await dialogs.confirm({
+      title: `Удалить пресет «${preset.name}»?`,
+      confirmLabel: "Удалить",
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await deletePreset(preset.id);
+      setPresets((prev) => prev.filter((p) => p.id !== preset.id));
+    } catch (e) {
+      await dialogs.alert({ title: "Не удалось удалить пресет", message: (e as Error).message });
+    }
   };
 
   const saveLabel: Record<SaveState, string> = {
@@ -264,7 +280,15 @@ export default function EditorPage() {
                 <button
                   className="btn small ghost"
                   style={{ alignSelf: "flex-start" }}
-                  onClick={() => window.confirm("Сбросить все настройки к стандартным?") && applyConfig(DEFAULT_CONFIG)}
+                  onClick={async () => {
+                    const ok = await dialogs.confirm({
+                      title: "Сбросить все настройки?",
+                      message: "Виджет вернётся к стандартному оформлению. Сохранённые пресеты не изменятся.",
+                      confirmLabel: "Сбросить",
+                      danger: true,
+                    });
+                    if (ok) applyConfig(DEFAULT_CONFIG);
+                  }}
                 >
                   Сбросить к стандартным
                 </button>

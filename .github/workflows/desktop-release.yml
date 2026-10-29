@@ -4,6 +4,11 @@ on:
   push:
     tags: ["desktop-v*"]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Тег релиза, к которому приложить файлы (например desktop-v1.0.0). Пусто: только собрать файлы без публикации"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -28,8 +33,9 @@ jobs:
           path: |
             desktop/release/*.exe
       - name: Publish GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') || inputs.tag != ''
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
           files: desktop/release/*.exe
           generate_release_notes: true

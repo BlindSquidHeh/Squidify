@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { DialogProvider } from "./components/Dialogs";
 import { Layout } from "./components/Layout";
 import { RequireAuth } from "./components/RequireAuth";
 import { AuthProvider } from "./lib/auth";
@@ -27,6 +28,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter basename={basename}>
+        <DialogProvider>
         <Layout>
           <Suspense fallback={<div className="boot">Загрузка…</div>}>
             <Routes>
@@ -49,6 +51,7 @@ export default function App() {
             </Routes>
           </Suspense>
         </Layout>
+        </DialogProvider>
       </BrowserRouter>
     </AuthProvider>
   );

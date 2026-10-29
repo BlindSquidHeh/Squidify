@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useDialogs } from "../components/dialog-context";
 import { Link, useNavigate } from "react-router-dom";
 import { CopyField } from "../components/CopyField";
 import { ScaledWidget } from "../components/ScaledWidget";
@@ -67,6 +68,7 @@ function SpotifyStatus() {
 }
 
 export default function Dashboard() {
+  const dialogs = useDialogs();
   const navigate = useNavigate();
   const [widgets, setWidgets] = useState<WidgetRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -99,7 +101,13 @@ export default function Dashboard() {
   };
 
   const remove = async (widget: WidgetRecord) => {
-    if (!window.confirm(`Удалить «${widget.name}»? Ссылка на виджет перестанет работать.`)) return;
+    const ok = await dialogs.confirm({
+      title: `Удалить «${widget.name}»?`,
+      message: "Ссылка на виджет перестанет работать. Это нельзя отменить.",
+      confirmLabel: "Удалить",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await deleteWidget(widget.id);
       await load();
@@ -109,7 +117,13 @@ export default function Dashboard() {
   };
 
   const regenerate = async (widget: WidgetRecord) => {
-    if (!window.confirm("Создать новую ссылку? Старая ссылка сразу перестанет работать в OBS и приложении.")) return;
+    const ok = await dialogs.confirm({
+      title: "Создать новую ссылку?",
+      message: "Старая ссылка сразу перестанет работать в OBS и в приложении для Windows. Новую придётся вставить заново.",
+      confirmLabel: "Создать",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await regenerateWidgetToken(widget.id);
       await load();
