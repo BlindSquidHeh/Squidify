@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "lib": ["deno.ns", "dom", "deno.unstable"]
+  },
+  "lint": {
+    "exclude": ["**/*.test.ts"],
+    "rules": { "exclude": ["no-explicit-any", "no-import-prefix"] }
+  },
+  "fmt": {
+    "lineWidth": 120,
+    "exclude": ["**/*.test.ts"]
+  }
+}

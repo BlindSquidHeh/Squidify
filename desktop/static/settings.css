@@ -1,0 +1,153 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b0b10;
+  --panel: #16161f;
+  --line: #2a2a38;
+  --text: #ececf1;
+  --muted: #9a9aad;
+  --accent: #1db954;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 "Segoe UI", system-ui, sans-serif;
+}
+
+main {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+h1 {
+  font-size: 20px;
+  margin: 0;
+}
+
+h2 {
+  font-size: 15px;
+  margin: 0 0 8px;
+}
+
+p {
+  margin: 0 0 10px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 12px;
+}
+
+section {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+input[type="password"],
+input[type="text"],
+input:not([type]),
+input[type="number"] {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #0f0f15;
+  color: var(--text);
+  font: inherit;
+}
+
+input[type="number"] {
+  width: 90px;
+  flex: none;
+}
+
+.size label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+button {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #1f1f2b;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #292938;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #04130a;
+}
+
+button.ghost {
+  background: transparent;
+}
+
+button.danger {
+  color: #ff8a96;
+  border-color: #4a2028;
+}
+
+.toggle {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 6px 0;
+  cursor: pointer;
+}
+
+.toggle input {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+}
+
+.message {
+  min-height: 1.5em;
+  margin: 8px 0 0;
+  font-size: 13px;
+}
+
+.message.error {
+  color: #ff8a96;
+}
+
+.message.ok {
+  color: #7be3a0;
+}

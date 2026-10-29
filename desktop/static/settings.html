@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'"
+    />
+    <title>Squidify — настройки</title>
+    <link rel="stylesheet" href="settings.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <img src="../build/icon.png" alt="" width="36" height="36" />
+        <div>
+          <h1>Squidify</h1>
+          <p class="muted">Виджет Spotify поверх окон · версия <span id="version"></span></p>
+        </div>
+      </header>
+
+      <section>
+        <h2>Ссылка на виджет</h2>
+        <p class="muted">
+          Скопируйте ссылку виджета на сайте Squidify («Мои виджеты» → «Копировать») и вставьте сюда. Дизайн
+          настраивается на сайте и обновляется в окне автоматически.
+        </p>
+        <div class="row">
+          <input id="url" type="password" placeholder="https://…/w/#…" spellcheck="false" autocomplete="off" />
+          <button id="toggle-url" type="button" class="ghost">Показать</button>
+        </div>
+        <div class="row">
+          <button id="save-url" type="button" class="primary">Сохранить</button>
+          <button id="open-site" type="button">Открыть сайт</button>
+          <button id="reload" type="button">Обновить</button>
+        </div>
+        <p id="url-message" class="message" role="status"></p>
+      </section>
+
+      <section>
+        <h2>Окно</h2>
+        <label class="toggle"><input type="checkbox" id="alwaysOnTop" /> <span>Поверх всех окон</span></label>
+        <label class="toggle"><input type="checkbox" id="locked" /> <span>Зафиксировать положение и размер</span></label>
+        <label class="toggle"
+          ><input type="checkbox" id="clickThrough" /> <span>Пропускать клики сквозь виджет (когда зафиксирован)</span></label
+        >
+        <label class="toggle"
+          ><input type="checkbox" id="autoSize" /> <span>Подгонять размер окна под виджет автоматически</span></label
+        >
+        <label class="toggle"><input type="checkbox" id="openAtLogin" /> <span>Запускать вместе с Windows</span></label>
+        <div class="row size">
+          <label>Ширина <input id="width" type="number" min="80" max="3840" /></label>
+          <label>Высота <input id="height" type="number" min="40" max="2160" /></label>
+          <button id="apply-size" type="button">Применить размер</button>
+        </div>
+        <div class="row">
+          <button id="toggle-visible" type="button">Скрыть / показать виджет</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Горячая клавиша</h2>
+        <p class="muted">Скрывает и показывает виджет. Нажмите сочетание в поле ниже.</p>
+        <div class="row">
+          <input id="hotkey" readonly placeholder="Нажмите сочетание клавиш" />
+          <button id="save-hotkey" type="button">Сохранить</button>
+        </div>
+        <p id="hotkey-message" class="message" role="status"></p>
+      </section>
+
+      <section class="footer">
+        <p class="muted">
+          Перемещайте виджет мышью, размер меняйте за уголок справа внизу. Меню — по правому клику на значке
+          Squidify в трее. Закрытие этого окна не завершает приложение.
+        </p>
+        <p class="muted small">
+          Squidify не связан со Spotify и не одобрен Spotify. Spotify — товарный знак Spotify AB.
+        </p>
+        <button id="quit" type="button" class="danger">Выйти из Squidify</button>
+      </section>
+    </main>
+    <script src="settings.js"></script>
+  </body>
+</html>

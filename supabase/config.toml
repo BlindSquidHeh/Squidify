@@ -1,0 +1,51 @@
+# Конфигурация Supabase CLI для локальной разработки (`supabase start`)
+# и деплоя функций (`supabase functions deploy`).
+project_id = "squidify"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 17
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+# Адрес сайта для писем подтверждения и восстановления пароля.
+site_url = "http://127.0.0.1:5173/"
+additional_redirect_urls = [
+  "http://127.0.0.1:5173/**",
+  "https://*.github.io/**",
+]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+enable_signup = true
+minimum_password_length = 8
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+secure_password_change = true
+
+[auth.rate_limit]
+email_sent = 10
+
+# JWT проверяется внутри функций (supabase.auth.getUser), это работает
+# и с legacy anon-ключами, и с новыми publishable-ключами.
+[functions.spotify-auth]
+verify_jwt = false
+
+[functions.widget-feed]
+verify_jwt = false
+
+[functions.account-delete]
+verify_jwt = false

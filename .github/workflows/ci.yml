@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  web-and-desktop:
+    runs-on: ubuntu-latest
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  edge-functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type check
+        working-directory: supabase/functions
+        run: deno check --config deno.json */index.ts
+      - name: Lint
+        working-directory: supabase/functions
+        run: deno lint --config deno.json
+
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Migrations and RLS tests
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql >/dev/null
+          PG_BIN=$(ls -d /usr/lib/postgresql/*/bin | tail -1) bash supabase/tests/run.sh

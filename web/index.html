@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="description" content="Squidify — бесплатный настраиваемый виджет текущего трека Spotify для OBS Studio и Windows." />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <script>
+      // Страница виджета (…/w/) должна быть прозрачной с самого первого кадра.
+      if (/\/w\/?$/.test(location.pathname)) document.documentElement.classList.add("widget-page");
+    </script>
+    <style>
+      html.widget-page, html.widget-page body { background: transparent !important; margin: 0; }
+      html:not(.widget-page) body { background: #0b0b10; color: #ececf1; margin: 0; }
+    </style>
+    <title>Squidify — виджет Spotify для OBS</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

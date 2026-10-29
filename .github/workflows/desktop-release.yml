@@ -1,0 +1,35 @@
+name: Desktop release (Windows)
+
+on:
+  push:
+    tags: ["desktop-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test -w desktop
+      - name: Build installer
+        working-directory: desktop
+        run: npm run dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: squidify-windows
+          path: |
+            desktop/release/*.exe
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: desktop/release/*.exe
+          generate_release_notes: true
