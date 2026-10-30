@@ -29,3 +29,10 @@ html.widget-page #root {
 .wp-outer {
   overflow: hidden;
 }
+
+/* Окно приложения Windows: без постоянных переходов, чтобы окно не перерисовывалось каждый кадр. */
+html.sw-embedded .sw-ring-fill,
+html.sw-embedded .sw-progress-fill,
+html.sw-embedded .sw-progress-knob {
+  transition: none !important;
+}
