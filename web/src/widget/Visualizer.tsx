@@ -135,6 +135,8 @@ export function Visualizer({ config, playing, ratio, seed, className }: Props) {
     const paint = (now: number) => {
       if (!running) return;
       frame = requestAnimationFrame(paint);
+      // 30 кадров в секунду достаточно для полос и вдвое дешевле для процессора.
+      if (now - last < 30) return;
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
       const { config: v, playing: isPlaying, ratio: progress, seed: trackSeed } = live.current;

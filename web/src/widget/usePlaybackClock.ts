@@ -19,7 +19,7 @@ export function usePlaybackClock(playback: FeedPlayback | null, receivedAt: numb
 
   useEffect(() => {
     if (!ticking) return;
-    const id = window.setInterval(() => setNow(Date.now()), 250);
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, [ticking]);
 
