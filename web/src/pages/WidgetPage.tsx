@@ -41,6 +41,12 @@ export default function WidgetPage() {
   }, []);
 
   const embedded = window.parent !== window;
+
+  // В окне Windows прогресс переключается раз в секунду без плавного перехода: непрерывная анимация
+  // заставляет перерисовывать окно 60 раз в секунду и заметно нагружает процессор.
+  useEffect(() => {
+    if (embedded) document.documentElement.classList.add("sw-embedded");
+  }, [embedded]);
   const userScale = config ? config.size.scale / 100 : 1;
 
   // Настоящий размер виджета без масштаба: высота может зависеть от содержимого.
