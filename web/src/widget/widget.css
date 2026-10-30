@@ -196,7 +196,7 @@
 
 .sw-ring-fill {
   stroke: var(--sw-progress-glow);
-  transition: stroke-dasharray 250ms linear;
+  transition: stroke-dasharray 1000ms linear;
 }
 
 .sw-cover img {
@@ -307,7 +307,7 @@
   inset: 0 auto 0 0;
   border-radius: inherit;
   background: var(--sw-progress-fill);
-  transition: width 250ms linear;
+  transition: width 1000ms linear;
 }
 
 .sw-progress-line {
@@ -333,7 +333,7 @@
   border-radius: 50%;
   background: var(--sw-title-color);
   transform: translate(-50%, -50%);
-  transition: left 250ms linear;
+  transition: left 1000ms linear;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 

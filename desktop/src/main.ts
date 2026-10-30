@@ -261,7 +261,7 @@ function createWidgetWindow(entry: WidgetEntry) {
       allowRunningInsecureContent: false,
       spellcheck: false,
       devTools: !app.isPackaged,
-      backgroundThrottling: false,
+      backgroundThrottling: true,
     },
   });
   windows.set(entry.id, win);
@@ -383,6 +383,19 @@ let shellSnapshot: ShellSnapshot | null = null;
 let watcher: ChildProcess | null = null;
 let watcherFailures = 0;
 
+/** Наблюдатель нужен, только пока есть виджет на панели задач: PowerShell в фоне зря нагружает процессор. */
+function syncShellWatcher() {
+  const needed = settings.widgets.some((w) => w.placement === "taskbar");
+  if (needed) {
+    syncShellWatcher();
+  } else if (watcher) {
+    const child = watcher;
+    watcher = null;
+    shellSnapshot = null;
+    child.kill();
+  }
+}
+
 function startShellWatcher() {
   if (process.platform !== "win32" || watcher) return;
   const encoded = Buffer.from(WATCH_SCRIPT, "utf16le").toString("base64");
@@ -403,16 +416,19 @@ function startShellWatcher() {
       if (!snapshot) continue;
       watcherFailures = 0;
       shellSnapshot = snapshot;
+      for (const win of pendingSnap) if (!win.isDestroyed()) snapToTaskbar(win);
+      pendingSnap.clear();
       applyPlacementVisibility();
     }
   });
   child.on("error", () => undefined);
   child.on("exit", () => {
+    if (watcher !== child) return; // остановлен намеренно
     watcher = null;
     shellSnapshot = null;
     applyPlacementVisibility();
     // Несколько попыток перезапуска; если PowerShell недоступен, виджеты остаются видимыми всегда.
-    if (!quitting && ++watcherFailures <= 3) setTimeout(startShellWatcher, 5000);
+    if (!quitting && ++watcherFailures <= 3) setTimeout(syncShellWatcher, 5000);
   });
 }
 
@@ -429,10 +445,8 @@ function applyPlacementVisibility() {
       const display = screen.getDisplayMatching(win.getBounds());
       const dip = shellSnapshot.taskbars.map((r) => screen.screenToDipRect(null, r));
       const full = shellSnapshot.fullscreenAreas.map((r) => screen.screenToDipRect(null, r));
-      show =
-        !shellSnapshot.fullscreen &&
-        !isFullscreenOn(display.bounds, full) &&
-        taskbarOnDisplay(display.bounds, dip) !== null;
+      // Только свой монитор: полный экран или скрытая панель на другом мониторе виджет не прячут.
+      show = !isFullscreenOn(display.bounds, full) && taskbarOnDisplay(display.bounds, dip) !== null;
     }
     if (show && !win.isVisible()) win.showInactive();
     else if (!show && win.isVisible()) win.hide();
@@ -440,8 +454,13 @@ function applyPlacementVisibility() {
 }
 
 /** При выборе «На панели задач» ставит окно на панель его монитора (слева от значков трея). */
+const pendingSnap = new Set<BrowserWindow>();
+
 function snapToTaskbar(win: BrowserWindow) {
-  if (!shellSnapshot) return;
+  if (!shellSnapshot) {
+    pendingSnap.add(win); // наблюдатель только запускается: поставим окно, когда придут данные о панелях
+    return;
+  }
   const b = win.getBounds();
   const display = screen.getDisplayMatching(b);
   const dip = shellSnapshot.taskbars.map((r) => screen.screenToDipRect(null, r));
@@ -513,6 +532,7 @@ function removeWidget(id: string): boolean {
   saveSettings(settings);
   windows.get(id)?.destroy();
   windows.delete(id);
+  syncShellWatcher();
   rebuildTrayMenu();
   notifySettings();
   return true;
@@ -857,6 +877,7 @@ function registerIpc() {
       const win = windowOf(id);
       if (entry && win && next.placement === "desktop" && entry.visible && entry.url) win.showInactive();
       if (win && next.placement === "taskbar") snapToTaskbar(win);
+      syncShellWatcher();
       applyPlacementVisibility();
     }
     if (next.url) setVisible(id, true);
@@ -922,7 +943,7 @@ app.whenReady().then(async () => {
     for (const [id, win] of windows) {
       if (!win.isDestroyed() && win.isVisible() && entryOf(id)?.alwaysOnTop) win.moveTop();
     }
-  }, 150);
+  }, 500);
 
   // После сна связь могла пропасть — обновляем страницы виджетов.
   powerMonitor.on("resume", () => reloadWidgets());

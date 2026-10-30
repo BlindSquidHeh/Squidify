@@ -86,7 +86,7 @@ export function taskbarOnDisplay(display: Rect, taskbars: Rect[]): Rect | null {
   );
 }
 
-/** Скрипт PowerShell: раз в 400 мс печатает по строке состояния. */
+/** Скрипт PowerShell: раз в секунду печатает по строке состояния. */
 export const WATCH_SCRIPT = String.raw`
 $ErrorActionPreference = 'SilentlyContinue'
 Add-Type -TypeDefinition @"
@@ -144,6 +144,6 @@ while ($true) {
   }
   [Console]::Out.WriteLine(('{0}|{1}|{2}' -f $state, ($list -join ';'), ($full -join ';')))
   [Console]::Out.Flush()
-  Start-Sleep -Milliseconds 400
+  Start-Sleep -Milliseconds 1000
 }
 `;
