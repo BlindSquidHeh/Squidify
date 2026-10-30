@@ -31,6 +31,8 @@ export interface Settings {
   openAtLogin: boolean;
   /** Видеокарта в окнах виджетов. Выключена: на части ПК с ней прозрачные окна становятся серыми и мигают. */
   gpu: boolean;
+  /** Без декоративных анимаций виджета (пульсация, радуга, бег фона): окно перерисовывается реже. */
+  economy: boolean;
 }
 
 export const MAX_WIDGETS = 12;
@@ -54,6 +56,7 @@ export const DEFAULT_SETTINGS: Settings = {
   hotkey: "CommandOrControl+Alt+S",
   openAtLogin: false,
   gpu: false,
+  economy: false,
 };
 
 export const MIN_SIZE = { width: 80, height: 40 };
@@ -124,6 +127,7 @@ export function sanitizeSettings(input: unknown): Settings {
     hotkey: isValidHotkey(src.hotkey) ? src.hotkey : d.hotkey,
     openAtLogin: bool(src.openAtLogin, d.openAtLogin),
     gpu: bool(src.gpu, d.gpu),
+    economy: bool(src.economy, d.economy),
   };
 }
 
