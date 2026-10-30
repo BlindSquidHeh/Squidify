@@ -6,6 +6,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { decodeDemoConfig } from "../lib/demoLink";
 import { naturalSourceSize } from "../widget/config";
+import { useAnimationThrottle } from "../widget/useAnimationThrottle";
 import { useDemoFeed } from "../widget/useDemoFeed";
 import { useWidgetFeed } from "../widget/useWidgetFeed";
 import { WidgetView } from "../widget/WidgetView";
@@ -47,6 +48,7 @@ export default function WidgetPage() {
   useEffect(() => {
     if (embedded) document.documentElement.classList.add("sw-embedded");
   }, [embedded]);
+  useAnimationThrottle(embedded);
   const userScale = config ? config.size.scale / 100 : 1;
 
   // Настоящий размер виджета без масштаба: высота может зависеть от содержимого.

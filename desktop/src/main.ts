@@ -58,7 +58,7 @@ const WIDGET_PARTITION = "persist:squidify-widget";
 
 let settings: Settings;
 /** Окна виджетов по id записи в настройках. */
-const frameScript = (economy: boolean) => `(function () {
+const frameScript = (fps: number) => `(function () {
   var d = document;
   var root = d.documentElement;
   root.classList.add("widget-page");
@@ -67,14 +67,15 @@ const frameScript = (economy: boolean) => `(function () {
   var style = d.createElement("style");
   style.textContent = "html, body, #root { color-scheme: normal !important; background: transparent !important; }";
   (d.head || root).appendChild(style);
-  root.classList.toggle("sw-economy", ${economy});
+  window.__swFps = ${fps};
+  root.classList.toggle("sw-economy", ${fps === 0});
 })();`;
 
 /** Применяет подстраховку прозрачности и экономный режим ко всем вложенным страницам виджета. */
 function tuneFrames(win: BrowserWindow) {
   if (win.isDestroyed()) return;
   for (const frame of win.webContents.mainFrame.frames) {
-    frame.executeJavaScript(frameScript(settings.economy)).catch(() => undefined);
+    frame.executeJavaScript(frameScript(settings.animationFps)).catch(() => undefined);
   }
 }
 
@@ -282,7 +283,7 @@ function createWidgetWindow(entry: WidgetEntry) {
   // Страница сама это отключает, но подстраховываемся: приводим вложенную страницу к прозрачной.
   win.webContents.on("did-frame-finish-load", (_event, isMainFrame, processId, routingId) => {
     if (isMainFrame) return;
-    webFrameMain.fromId(processId, routingId)?.executeJavaScript(frameScript(settings.economy)).catch(() => undefined);
+    webFrameMain.fromId(processId, routingId)?.executeJavaScript(frameScript(settings.animationFps)).catch(() => undefined);
     refreshTransparency(win);
   });
 
@@ -568,7 +569,7 @@ function updateSettings(patch: Partial<Omit<Settings, "widgets">>, refresh = tru
   settings = { ...settings, ...patch };
   saveSettings(settings);
   if (refresh) {
-    if ("economy" in patch) for (const win of windows.values()) tuneFrames(win);
+    if ("animationFps" in patch) for (const win of windows.values()) tuneFrames(win);
     if ("hotkey" in patch) registerHotkey();
     if ("openAtLogin" in patch) app.setLoginItemSettings({ openAtLogin: settings.openAtLogin });
     rebuildTrayMenu();
@@ -802,7 +803,9 @@ function registerIpc() {
     const next: Partial<Omit<Settings, "widgets">> = {};
     if (typeof p.openAtLogin === "boolean") next.openAtLogin = p.openAtLogin;
     if (typeof p.gpu === "boolean") next.gpu = p.gpu;
-    if (typeof p.economy === "boolean") next.economy = p.economy;
+    if (p.animationFps === 0 || p.animationFps === 15 || p.animationFps === 20 || p.animationFps === 30 || p.animationFps === 60) {
+      next.animationFps = p.animationFps;
+    }
     if ("hotkey" in p) {
       if (!isValidHotkey(p.hotkey)) return { ok: false, error: "Некорректное сочетание клавиш" };
       next.hotkey = p.hotkey;

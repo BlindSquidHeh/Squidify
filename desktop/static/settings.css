@@ -188,3 +188,9 @@ select {
 .flags .toggle {
   margin: 0;
 }
+
+.field {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
