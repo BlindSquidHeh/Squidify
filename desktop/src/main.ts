@@ -58,7 +58,7 @@ const WIDGET_PARTITION = "persist:squidify-widget";
 
 let settings: Settings;
 /** Окна виджетов по id записи в настройках. */
-const TRANSPARENT_FRAME_SCRIPT = `(function () {
+const frameScript = (economy: boolean) => `(function () {
   var d = document;
   var root = d.documentElement;
   root.classList.add("widget-page");
@@ -67,7 +67,16 @@ const TRANSPARENT_FRAME_SCRIPT = `(function () {
   var style = d.createElement("style");
   style.textContent = "html, body, #root { color-scheme: normal !important; background: transparent !important; }";
   (d.head || root).appendChild(style);
+  root.classList.toggle("sw-economy", ${economy});
 })();`;
+
+/** Применяет подстраховку прозрачности и экономный режим ко всем вложенным страницам виджета. */
+function tuneFrames(win: BrowserWindow) {
+  if (win.isDestroyed()) return;
+  for (const frame of win.webContents.mainFrame.frames) {
+    frame.executeJavaScript(frameScript(settings.economy)).catch(() => undefined);
+  }
+}
 
 const windows = new Map<string, BrowserWindow>();
 const drags = new Map<string, Rectangle>();
@@ -273,7 +282,7 @@ function createWidgetWindow(entry: WidgetEntry) {
   // Страница сама это отключает, но подстраховываемся: приводим вложенную страницу к прозрачной.
   win.webContents.on("did-frame-finish-load", (_event, isMainFrame, processId, routingId) => {
     if (isMainFrame) return;
-    webFrameMain.fromId(processId, routingId)?.executeJavaScript(TRANSPARENT_FRAME_SCRIPT).catch(() => undefined);
+    webFrameMain.fromId(processId, routingId)?.executeJavaScript(frameScript(settings.economy)).catch(() => undefined);
     refreshTransparency(win);
   });
 
@@ -559,6 +568,7 @@ function updateSettings(patch: Partial<Omit<Settings, "widgets">>, refresh = tru
   settings = { ...settings, ...patch };
   saveSettings(settings);
   if (refresh) {
+    if ("economy" in patch) for (const win of windows.values()) tuneFrames(win);
     if ("hotkey" in patch) registerHotkey();
     if ("openAtLogin" in patch) app.setLoginItemSettings({ openAtLogin: settings.openAtLogin });
     rebuildTrayMenu();
@@ -792,6 +802,7 @@ function registerIpc() {
     const next: Partial<Omit<Settings, "widgets">> = {};
     if (typeof p.openAtLogin === "boolean") next.openAtLogin = p.openAtLogin;
     if (typeof p.gpu === "boolean") next.gpu = p.gpu;
+    if (typeof p.economy === "boolean") next.economy = p.economy;
     if ("hotkey" in p) {
       if (!isValidHotkey(p.hotkey)) return { ok: false, error: "Некорректное сочетание клавиш" };
       next.hotkey = p.hotkey;
@@ -815,10 +826,21 @@ function registerIpc() {
       if (!win) continue;
       for (const frame of win.webContents.mainFrame.frames) {
         try {
-          const info = await frame.executeJavaScript(`(function () {
+          const info = await frame.executeJavaScript(`new Promise(function (resolve) {
+            var frames = 0;
+            var start = performance.now();
+            function count() {
+              frames++;
+              if (performance.now() - start < 2000) requestAnimationFrame(count);
+              else done();
+            }
+            requestAnimationFrame(count);
+            function done() {
             var r = document.documentElement;
             var cs = getComputedStyle(r);
-            return JSON.stringify({
+            resolve(JSON.stringify({
+              fps: Math.round(frames / 2),
+              animations: document.getAnimations().filter(function (a) { return a.playState === "running"; }).map(function (a) { return a.animationName || a.transitionProperty; }),
               className: r.className,
               colorScheme: cs.colorScheme,
               htmlBg: cs.backgroundColor,
@@ -826,8 +848,9 @@ function registerIpc() {
               meta: !!document.querySelector('meta[name="color-scheme"]'),
               prefersDark: matchMedia("(prefers-color-scheme: dark)").matches,
               size: innerWidth + "x" + innerHeight
-            });
-          })()`);
+            }));
+            }
+          })`);
           lines.push(`  страница: ${info}`);
         } catch (error) {
           lines.push(`  страница: ошибка ${String(error)}`);

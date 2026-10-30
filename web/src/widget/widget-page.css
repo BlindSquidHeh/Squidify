@@ -36,3 +36,11 @@ html.sw-embedded .sw-progress-fill,
 html.sw-embedded .sw-progress-knob {
   transition: none !important;
 }
+
+/* Экономный режим приложения: декоративные анимации выключены, бегущая строка остаётся. */
+html.sw-economy *:not(.sw-marquee-track),
+html.sw-economy *::before,
+html.sw-economy *::after {
+  animation: none !important;
+  transition: none !important;
+}

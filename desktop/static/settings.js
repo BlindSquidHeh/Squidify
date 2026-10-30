@@ -6,7 +6,7 @@
   var $ = function (id) {
     return document.getElementById(id);
   };
-  var toggles = ["openAtLogin", "gpu"];
+  var toggles = ["openAtLogin", "gpu", "economy"];
   var pendingHotkey = null;
   var cards = {};
 
