@@ -31,8 +31,8 @@ export interface Settings {
   openAtLogin: boolean;
   /** Видеокарта в окнах виджетов. Выключена: на части ПК с ней прозрачные окна становятся серыми и мигают. */
   gpu: boolean;
-  /** Без декоративных анимаций виджета (пульсация, радуга, бег фона): окно перерисовывается реже. */
-  economy: boolean;
+  /** Кадров в секунду у анимаций виджета. 0 — без анимаций, 60 — как есть. Чем меньше, тем меньше нагрузка. */
+  animationFps: 0 | 15 | 20 | 30 | 60;
 }
 
 export const MAX_WIDGETS = 12;
@@ -56,7 +56,7 @@ export const DEFAULT_SETTINGS: Settings = {
   hotkey: "CommandOrControl+Alt+S",
   openAtLogin: false,
   gpu: false,
-  economy: false,
+  animationFps: 20,
 };
 
 export const MIN_SIZE = { width: 80, height: 40 };
@@ -66,6 +66,14 @@ const HOTKEY_RE = /^(?:(?:CommandOrControl|CmdOrCtrl|Control|Ctrl|Alt|Option|Shi
 
 export function isValidHotkey(value: unknown): value is string {
   return typeof value === "string" && value.length <= 60 && HOTKEY_RE.test(value);
+}
+
+const FPS_VALUES = [0, 15, 20, 30, 60] as const;
+
+function sanitizeFps(value: unknown, legacyEconomy: unknown): Settings["animationFps"] {
+  const found = FPS_VALUES.find((v) => v === value);
+  if (found !== undefined) return found;
+  return legacyEconomy === true ? 0 : DEFAULT_SETTINGS.animationFps;
 }
 
 function bool(value: unknown, fallback: boolean): boolean {
@@ -127,7 +135,7 @@ export function sanitizeSettings(input: unknown): Settings {
     hotkey: isValidHotkey(src.hotkey) ? src.hotkey : d.hotkey,
     openAtLogin: bool(src.openAtLogin, d.openAtLogin),
     gpu: bool(src.gpu, d.gpu),
-    economy: bool(src.economy, d.economy),
+    animationFps: sanitizeFps(src.animationFps, src.economy),
   };
 }
 

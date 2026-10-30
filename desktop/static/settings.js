@@ -6,7 +6,7 @@
   var $ = function (id) {
     return document.getElementById(id);
   };
-  var toggles = ["openAtLogin", "gpu", "economy"];
+  var toggles = ["openAtLogin", "gpu"];
   var pendingHotkey = null;
   var cards = {};
 
@@ -196,6 +196,7 @@
     toggles.forEach(function (key) {
       $(key).checked = Boolean(s[key]);
     });
+    if (document.activeElement !== $("animationFps")) $("animationFps").value = String(s.animationFps);
     if (pendingHotkey === null) $("hotkey").value = s.hotkey;
     message("hotkey-message", s.hotkeyError || "", false);
   }
@@ -222,6 +223,9 @@
   });
   $("toggle-visible").addEventListener("click", function () {
     api.action("toggle").then(render);
+  });
+  $("animationFps").addEventListener("change", function (event) {
+    update({ animationFps: Number(event.target.value) }, "url-message");
   });
   $("diagnostics").addEventListener("click", function () {
     api.diagnostics().then(function () {
