@@ -404,10 +404,46 @@ export function imageUrl(value: unknown): string {
   try {
     const url = new URL(raw);
     if (url.protocol !== "https:" || url.username || url.password) return "";
-    return url.href;
+    return directImageUrl(url);
   } catch {
     return "";
   }
+}
+
+/**
+ * Люди часто вставляют ссылку на страницу с картинкой (imgur.com/abc, giphy.com/gifs/…, github.com/…/blob/…),
+ * а не на сам файл. Тег <img> такую страницу показать не может, поэтому переводим известные форматы
+ * в прямые ссылки на файл. Остальные ссылки возвращаем как есть.
+ */
+function directImageUrl(url: URL): string {
+  const host = url.hostname.toLowerCase().replace(/^www\./, "");
+  const parts = url.pathname.split("/").filter(Boolean);
+
+  if (host === "imgur.com" || host === "m.imgur.com") {
+    // imgur.com/AbC123 или imgur.com/AbC123.jpg — страница одной картинки.
+    // i.imgur.com отдаёт исходный файл с любым расширением, поэтому .png подходит и для GIF.
+    const m = parts.length === 1 ? /^([A-Za-z0-9]{5,10})(\.[A-Za-z0-9]+)?$/.exec(parts[0]) : null;
+    if (m) return `https://i.imgur.com/${m[1]}.png`;
+    return url.href;
+  }
+  if (host === "i.imgur.com" && parts.length === 1) {
+    // .gifv и .mp4 — это видео/HTML, а не картинка.
+    const m = /^([A-Za-z0-9]{5,10})(?:\.(gifv|mp4|webm))?$/i.exec(parts[0]);
+    if (m && (m[2] || !parts[0].includes("."))) return `https://i.imgur.com/${m[1]}.gif`;
+    return url.href;
+  }
+  if (host === "giphy.com" && parts[0] === "gifs" && parts[1]) {
+    // giphy.com/gifs/cat-dance-AbC123 → media.giphy.com/media/AbC123/giphy.gif
+    const id = parts[1].split("-").pop();
+    if (id && /^[A-Za-z0-9]+$/.test(id)) return `https://media.giphy.com/media/${id}/giphy.gif`;
+    return url.href;
+  }
+  if (host === "github.com" && parts.length >= 5 && (parts[2] === "blob" || parts[2] === "raw")) {
+    // github.com/user/repo/blob/main/img.gif → raw.githubusercontent.com/user/repo/main/img.gif
+    const [user, repo, , ...rest] = parts;
+    return `https://raw.githubusercontent.com/${user}/${repo}/${rest.join("/")}`;
+  }
+  return url.href;
 }
 
 function decoration(value: unknown): Decoration {

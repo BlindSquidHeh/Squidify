@@ -183,3 +183,26 @@ describe("эффекты рамки и своя обложка", () => {
     expect(c.progress.style).toBe("cover-ring");
   });
 });
+
+describe("imageUrl: ссылки на страницы превращаются в прямые ссылки на файл", () => {
+  it("imgur", () => {
+    expect(imageUrl("https://imgur.com/AbC123x")).toBe("https://i.imgur.com/AbC123x.png");
+    expect(imageUrl("https://www.imgur.com/AbC123x")).toBe("https://i.imgur.com/AbC123x.png");
+    expect(imageUrl("https://m.imgur.com/AbC123x.jpg")).toBe("https://i.imgur.com/AbC123x.png");
+    expect(imageUrl("https://i.imgur.com/AbC123x.gifv")).toBe("https://i.imgur.com/AbC123x.gif");
+    expect(imageUrl("https://i.imgur.com/AbC123x.mp4")).toBe("https://i.imgur.com/AbC123x.gif");
+    expect(imageUrl("https://i.imgur.com/AbC123x")).toBe("https://i.imgur.com/AbC123x.gif");
+    // Прямые ссылки и альбомы не трогаем.
+    expect(imageUrl("https://i.imgur.com/AbC123x.jpeg")).toBe("https://i.imgur.com/AbC123x.jpeg");
+    expect(imageUrl("https://imgur.com/a/AbC123x")).toBe("https://imgur.com/a/AbC123x");
+  });
+
+  it("giphy и github", () => {
+    expect(imageUrl("https://giphy.com/gifs/cat-dance-xT9IgG50Fb7Mi0prBC")).toBe(
+      "https://media.giphy.com/media/xT9IgG50Fb7Mi0prBC/giphy.gif",
+    );
+    expect(imageUrl("https://github.com/user/repo/blob/main/img/cat.gif")).toBe(
+      "https://raw.githubusercontent.com/user/repo/main/img/cat.gif",
+    );
+  });
+});
