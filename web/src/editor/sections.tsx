@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FONTS,
   imageUrl,
@@ -28,11 +28,37 @@ const ALIGN_OPTIONS = [
   { value: "end", label: "Конец" },
 ] as const;
 
+type ImageStatus = "idle" | "loading" | "ok" | "error";
+
+/** Проверяет, открывается ли ссылка как картинка (так же, как её загрузит виджет в OBS). */
+function useImageStatus(url: string): ImageStatus {
+  const [state, setState] = useState<{ url: string; status: ImageStatus }>({ url: "", status: "idle" });
+  useEffect(() => {
+    if (!url) return;
+    let alive = true;
+    const img = new Image();
+    img.referrerPolicy = "no-referrer";
+    img.onload = () => alive && setState({ url, status: "ok" });
+    img.onerror = () => alive && setState({ url, status: "error" });
+    img.src = url;
+    return () => {
+      alive = false;
+      img.onload = null;
+      img.onerror = null;
+    };
+  }, [url]);
+  if (!url) return "idle";
+  return state.url === url ? state.status : "loading";
+}
+
 /** Поле для ссылки на картинку: невалидный ввод не сохраняется, пока не станет корректной ссылкой. */
 function UrlInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   const [draft, setDraft] = useState<string | null>(null);
   const shown = draft ?? value;
-  const invalid = shown.trim() !== "" && imageUrl(shown) === "";
+  const clean = imageUrl(shown);
+  const invalid = shown.trim() !== "" && clean === "";
+  const converted = clean !== "" && clean !== shown.trim();
+  const status = useImageStatus(value);
   return (
     <label className="field">
       <span>{label}</span>
@@ -44,12 +70,24 @@ function UrlInput({ label, value, onChange }: { label: string; value: string; on
         placeholder="https://…/картинка.gif"
         onChange={(e) => {
           setDraft(e.target.value);
-          const clean = imageUrl(e.target.value);
-          if (clean !== "" || e.target.value.trim() === "") onChange(clean);
+          const next = imageUrl(e.target.value);
+          if (next !== "" || e.target.value.trim() === "") onChange(next);
         }}
         onBlur={() => setDraft(null)}
       />
       {invalid && <small className="muted">Нужна прямая ссылка, которая начинается с https://</small>}
+      {!invalid && converted && (
+        <small className="muted">
+          Это ссылка на страницу, а не на файл. Используем прямую ссылку: <code>{clean}</code>
+        </small>
+      )}
+      {!invalid && status === "error" && (
+        <span className="alert error small">
+          Картинка по этой ссылке не открывается. Скорее всего, это ссылка на страницу или альбом, а не на сам файл.
+          Откройте картинку, нажмите на неё правой кнопкой → «Копировать адрес изображения» и вставьте ссылку сюда
+          (для imgur она начинается с i.imgur.com).
+        </span>
+      )}
     </label>
   );
 }

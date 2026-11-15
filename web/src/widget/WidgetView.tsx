@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import type { FeedItem, FeedPlayback } from "../lib/feed";
 import { fontFamily, type Decoration, type WidgetConfig } from "./config";
 import { useGoogleFont } from "./useGoogleFont";
@@ -198,6 +198,31 @@ function DecorationImage({ d, order, hidden }: { d: Decoration; order: number; h
         // Битая ссылка не должна оставлять «сломанную» иконку в кадре.
         e.currentTarget.style.display = "none";
       }}
+    />
+  );
+}
+
+const NOTE_ICON = (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M9 18V5l11-2v13" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="6.5" cy="18" r="2.5" fill="currentColor" />
+    <circle cx="17.5" cy="16" r="2.5" fill="currentColor" />
+  </svg>
+);
+
+/** Своя картинка вместо обложки. Если ссылка не открылась, показываем нотку, а не «битую» иконку. */
+function CoverFallback({ url, style }: { url: string; style: CSSProperties }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  if (!url || failedUrl === url) return NOTE_ICON;
+  return (
+    <img
+      key={url}
+      src={url}
+      alt=""
+      referrerPolicy="no-referrer"
+      draggable={false}
+      style={style}
+      onError={() => setFailedUrl(url)}
     />
   );
 }
@@ -412,15 +437,7 @@ export function WidgetView({ config: c, playback, receivedAt, lastItem, preview 
             <img src={item.coverUrl} alt={item.album ?? item.title} referrerPolicy="no-referrer" draggable={false} />
           ) : (
             <div className="sw-cover-empty" style={{ background: hexToRgba(c.cover.fallbackBg, c.cover.fallbackBgOpacity) }}>
-              {c.cover.fallbackUrl ? (
-                <img src={c.cover.fallbackUrl} alt="" referrerPolicy="no-referrer" draggable={false} style={fallbackStyle} />
-              ) : (
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M9 18V5l11-2v13" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  <circle cx="6.5" cy="18" r="2.5" fill="currentColor" />
-                  <circle cx="17.5" cy="16" r="2.5" fill="currentColor" />
-                </svg>
-              )}
+              <CoverFallback url={c.cover.fallbackUrl} style={fallbackStyle} />
             </div>
           )}
         </a>
